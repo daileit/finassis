@@ -53,7 +53,7 @@ Vietnamese is the first-class locale; English is the default and the source lang
 
 | Layer | What | Where translated | Mechanism |
 |-------|------|------------------|-----------|
-| UI strings | buttons, labels, errors, empty states | console | `next-intl` message catalogues `src/i18n/{en,vi}.json`, keyed by stable ids (`review.reason.no_recipe`), ICU MessageFormat |
+| UI strings | buttons, labels, errors, empty states | console | `next-intl` over the shared repo-level `i18n/{en,vi}.json` catalogues (also read by the API for Telegram/narration), keyed by stable ids (`review.reason.no_recipe`), ICU MessageFormat |
 | Domain terms | enums the API returns: account types, tag kinds, review reasons, alert kinds, usage kinds, plan names | console | same catalogue, namespaced to mirror the enum: `enum.account_type.credit_card` → "Thẻ tín dụng". Backend stores and returns English identifiers only |
 | Unit names | `luong`, `chi`, `oz_troy`, `share` … | console | global units are enums: `unit.luong` → "lượng" / "tael"; covered by the `/meta/enums` check. User-defined units display their own `name` from the API |
 | User data | descriptions, merchant names, account names, annotations, recipe names | never | stored and shown verbatim |

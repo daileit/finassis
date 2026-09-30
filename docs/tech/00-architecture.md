@@ -27,7 +27,9 @@ finassis/
 │   └── src/finassis/
 │       ├── api/          REST routers, auth, quota middleware
 │       ├── mcp/          MCP server (thin adapter over domain)
-│       ├── channels/     telegram/ (webhook + push renderer), later zalo/, email_digest/
+│       ├── channels/     telegram/ (webhook + push renderer) — talks to the core only via a
+│       │                 FinassisClient port (in-process now, HTTP later); later zalo/, email_digest/
+│       ├── client/       FinassisClient protocol + InProcessClient; HttpClient generated at split time
 │       ├── domain/       ledger, accounts, tags, reporting, recipes, interactions, metering …
 │       ├── ingest/       fingerprint, DSL interpreter, reconcile, tagging cascade
 │       ├── compiler/     LLM recipe compiler, nightly tag batch
@@ -36,6 +38,7 @@ finassis/
 │       └── db/           models, RLS helpers
 ├── console/              Next.js UI — separate app, own Dockerfile (see docs/ui/)
 ├── connectors/           n8n templates and small scripts that end in POST /raw
+├── i18n/                 shared message catalogues (en source, vi) consumed by api/ (channels, narration) and console/
 ├── docs/                 product/ · tech/ · ui/
 ├── docker-compose.yml    api, worker, console, postgres, redis, grafana, prometheus
 ├── Makefile              dev shortcuts: up, api, console, contract (export openapi → regen client), test
@@ -105,6 +108,7 @@ REST, MCP and the Telegram channel are three thin adapters in one process over o
 - MCP server authenticates the same way; each MCP session is bound to one user's key.
 - Browser sessions (for the separate console) via OIDC → HttpOnly cookie; same `user_id` and scope model.
 - `admin`-kind keys for the operator API; every admin action audited.
+- `channel`-kind keys (scope `channel:telegram`, …) may act on behalf of a user via `X-Act-As-User`, only for users holding an identity with that provider; audited. Unused while the bot is in-process; required the day it is split out (see [07](07-interactions-and-channels.md)).
 - Quota middleware runs after auth: resolves plan + grants, checks Redis usage counters, emits `usage_events` (see [06-operations.md](06-operations.md)).
 
 ## Events & integrations out

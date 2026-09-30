@@ -43,17 +43,58 @@ A channel is a renderer + resolver of interactions and a thin adapter over the d
 | Zalo OA | message + buttons | same pattern | later |
 | Email digest | weekly list with deep links | links → REST/console | later |
 
-## Telegram channel — inside the API service
+## Telegram channel — inside the API service today, separable tomorrow
 
-The bot is **a module of `api/`**, not a separate service: `api/src/finassis/channels/telegram/`. It calls domain services directly (no loopback HTTP) but contains no logic REST and MCP don't also expose — the same rule as the console, enforced by package structure instead of a network boundary. Rationale in ADR-024.
+The bot ships **as a module of `api/`** (`api/src/finassis/channels/telegram/`) and runs in the same process. It is designed so that moving it to its own service is a configuration change, not a rewrite. Rationale in ADR-024.
+
+### The rule: the bot never imports the domain layer
+
+The bot depends on two **ports** (interfaces), not on domain services:
+
+```python
+class FinassisClient(Protocol):          # everything the bot asks the core to do
+    async def raw_ingest(self, user: UserRef, text: str, source: str) -> RawResult: ...
+    async def get_balances(self, user: UserRef, at: date | None, currency: str | None) -> Balances: ...
+    async def list_interactions(self, user: UserRef, status: str) -> list[Interaction]: ...
+    async def resolve_interaction(self, user: UserRef, id: UUID, choice: Choice) -> Interaction: ...
+    async def create_key(self, user: UserRef, name: str, scopes: list[str]) -> KeyOnce: ...
+    # ... one method per public endpoint the bot uses, mirroring the OpenAPI operationIds
+
+class EventSource(Protocol):             # everything the core tells the bot
+    def subscribe(self, kinds: set[str]) -> AsyncIterator[Event]: ...   # interaction.created, alert.raised, digest.due
+```
+
+Two implementations of each, chosen by config (`CHANNEL_TELEGRAM_MODE = inprocess | remote`):
+
+| Port | `inprocess` (now) | `remote` (later) |
+|------|-------------------|------------------|
+| `FinassisClient` | `InProcessClient`: calls the **same request handlers** REST uses (through the service layer, with auth context set to the mapped user) — no HTTP, no serialization, but the exact same code path and quota checks as an API call | `HttpClient`: generated from `/openapi.json`, authenticated with a **service key** (`kind = channel`, scope `channel:telegram`) that may act **on behalf of** a user resolved via `identities` |
+| `EventSource` | Redis Stream consumer group `channel-telegram` | Webhook receiver or SSE `/events/stream` subscribed with the service key |
+
+The bot's Telegram-specific code (update parsing, keyboards, rendering) sits on top and is identical in both modes. A contract test runs the bot's handler suite against **both** clients so drift is caught early.
+
+### Why in-process now
+
+One deployment, one image, one thing to operate; if the API is down the bot is useless anyway. `InProcessClient` avoids loopback HTTP and double serialization while still going through the API's own handlers, so quotas, RLS context, metering and audit behave exactly as for an external caller.
+
+### What the split looks like when it comes
+
+1. Add the `channel` key kind and `act_as` support in the API (a service key + `X-Act-As-User` header, allowed only for `channel:*` scopes, audited).
+2. Set `CHANNEL_TELEGRAM_MODE=remote`, give the bot a service key, point Telegram's webhook at the new host.
+3. Move `channels/telegram/` to `bot/` with its own Dockerfile; its only dependency on the repo becomes the generated client.
+
+No domain code changes. The `EventSource` swap is the same shape: the bot subscribes to webhooks instead of the Redis stream.
+
+### Flow
 
 ```
 Telegram ──webhook──▶ POST /channels/telegram/webhook (FastAPI, secret-token verified)
-                        → parse update → identities(telegram, chat_id) → user
-                        → command handler | callback handler | free-text handler
-                        → domain service → render reply (i18n, user locale) → Telegram sendMessage
+                        → parse update → identities(telegram, chat_id) → UserRef
+                        → command | callback | free-text handler
+                        → FinassisClient.<method>(user, ...)      # in-process or HTTP, same call
+                        → render reply (i18n, user locale) → Telegram sendMessage
 
-worker ──consumes── interaction.created / alert.raised / digest schedule
+EventSource ──▶ interaction.created / alert.raised / digest.due
                         → render → Telegram sendMessage (push)
 ```
 
@@ -96,9 +137,16 @@ identities
 - Per-chat rate limit; raw-text inputs count against `raw.item` allowance like any other source (`source: "telegram"`).
 - Keys revealed in chat carry a "delete this message" button; we also offer `/keys rotate`.
 
-### Extraction path
+### Act-as-user for service keys (defined now, used at split time)
 
-If the channel ever needs its own lifecycle, `channels/telegram` depends only on the domain layer and can be moved to its own process with a generated API client in place of direct calls. Not planned.
+```
+api_keys.kind ∈ user | admin | channel
+scopes for channel keys: channel:telegram (later channel:zalo …)
+header: X-Act-As-User: <user_id>   -- accepted only for kind=channel; the user must have an identity
+                                       for that channel's provider; every act-as call is audited
+```
+
+Defining this in the auth model now costs nothing and means the split requires no auth redesign.
 
 ## What this changes elsewhere
 

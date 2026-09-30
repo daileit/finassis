@@ -276,7 +276,8 @@ link_codes     single-use codes to attach a new identity to an existing user
 
 ```
 usage_events, usage_rollups, plans, user_plans, grants, admin_audit
-api_keys      id, user_id, kind (user | admin), scopes text[], hashed_key, last_used_at, expires_at, revoked_at
+api_keys      id, user_id (NULL for channel keys), kind (user | admin | channel), scopes text[], hashed_key,
+              last_used_at, expires_at, revoked_at
 webhooks      id, user_id, url, events text[], secret, is_active, failure_count
 sessions      browser sessions for the console (or stateless JWT + refresh tokens)
 ```
