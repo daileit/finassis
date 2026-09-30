@@ -31,7 +31,7 @@
 
   "kind.expense": "Chi tiêu",
   "kind.income": "Thu nhập",
-  "kind.transfer": "Chuyển tiền",
+  "kind.off_report": "Không tính vào báo cáo",
 
   "enum.account_type.cash": "Tiền mặt",
   "enum.account_type.bank": "Tài khoản ngân hàng",

@@ -30,7 +30,7 @@
 
   "kind.expense": "Expense",
   "kind.income": "Income",
-  "kind.transfer": "Transfer",
+  "kind.off_report": "Not counted in reports",
 
   "enum.account_type.cash": "Cash",
   "enum.account_type.bank": "Bank account",

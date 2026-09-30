@@ -1,7 +1,7 @@
 {
   "$schema": "./schemas/tags.schema.json",
-  "version": 1,
-  "notes": "System tag tree. Source of truth for the seed loader and for tag.* i18n entries. Roots are fixed; children are system tags; users add custom children under a root. default: on=active for new users, off=available, sys=system-only. Keywords feed the keyword dictionary and the tag-name embedding index; Vietnamese keywords are tone-mark-free.",
+  "version": 3,
+  "notes": "System tag tree. Source of truth for the seed loader and for tag.* i18n entries. Roots are fixed; children are system tags; users add custom children under a root. default: on=active for new users, off=available, sys=system-only. Keywords feed the keyword dictionary and the tag-name embedding index; Vietnamese keywords are tone-mark-free. Kinds: expense, income, off_report. Everything under the off_report root (system or custom) is excluded from spend/income/budget reports; savings-rate and investment-flow reports read its children explicitly.",
   "roots": [
     {
       "key": "food",
@@ -1483,23 +1483,25 @@
       ]
     },
     {
-      "key": "transfer",
-      "kind": "transfer",
+      "key": "off_report",
+      "kind": "off_report",
       "names": {
-        "en": "Transfers",
-        "vi": "Chuyển tiền"
+        "en": "Not counted in reports",
+        "vi": "Không tính vào báo cáo"
       },
       "children": [
         {
-          "key": "own_accounts",
+          "key": "self_transfer",
           "names": {
-            "en": "Between my accounts",
-            "vi": "Chuyển giữa tài khoản"
+            "en": "Transfer between my accounts",
+            "vi": "Chuyển giữa tài khoản của tôi"
           },
           "default": "on",
           "keywords": [
             "chuyen khoan noi bo",
-            "chuyen tien cho chinh minh"
+            "chuyen tien cho chinh minh",
+            "self transfer",
+            "tu chuyen"
           ]
         },
         {
@@ -1693,6 +1695,35 @@
             "doi tien",
             "mua usd",
             "ban usd"
+          ]
+        },
+        {
+          "key": "reimbursable",
+          "names": {
+            "en": "Reimbursable (will be paid back)",
+            "vi": "Sẽ được hoàn lại"
+          },
+          "default": "on",
+          "keywords": [
+            "cong tac",
+            "tam ung",
+            "reimburse",
+            "hoan ung",
+            "cong ty tra"
+          ]
+        },
+        {
+          "key": "ignore",
+          "names": {
+            "en": "Ignore / test entry",
+            "vi": "Bỏ qua / thử nghiệm"
+          },
+          "default": "on",
+          "keywords": [
+            "test",
+            "thu",
+            "bo qua",
+            "ignore"
           ]
         }
       ]
