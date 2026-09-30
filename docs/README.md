@@ -20,6 +20,7 @@ Repo layout: `api/` (Python backend: REST, MCP, Telegram channel, worker), `cons
 - [05-decisions.md](tech/05-decisions.md) — decision log (ADR-001…024) and open questions
 - [06-operations.md](tech/06-operations.md) — config, metrics, usage metering, plans & allowance, admin API, jobs, retention
 - [07-interactions-and-channels.md](tech/07-interactions-and-channels.md) — pending-question model; Telegram channel in-process now via a client port, separable later; identities
+- [08-database.md](tech/08-database.md) — PostgreSQL 16 choices: extensions, conventions, roles & RLS, partitioning, indexing, triggers; DDL in [`api/db/schema.sql`](../api/db/schema.sql)
 
 ## UI — the console (`console/`, separate app in this repo)
 
