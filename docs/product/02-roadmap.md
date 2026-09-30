@@ -11,9 +11,9 @@ Each phase is shippable and used for real (by us) before the next starts. Scope 
 - Annotations table and endpoints.
 - `interactions` and `identities` models with REST endpoints; system accounts (receivable, payable) on demand.
 - Bootstrap admin from config (key generated and printed once if absent). **Minimal Telegram slice**: `/start`, `/link`, `/keys`, `/lang` — enough to register and mint an API key without a console.
-- Usage metering middleware, `usage_events`/rollups, default free plan, `/metrics`, Grafana in Compose.
+- Usage metering middleware, `usage_events`/rollups, default free plan, `/metrics` (Prometheus/Grafana containers when needed; tech/06).
 
-Exit: register via the bot, mint a key, post transactions via API (incl. both sides of a two-bank transfer, which leave spend/income unchanged); Grafana shows the stack's health.
+Exit: register via the bot, mint a key, post transactions via API (incl. both sides of a two-bank transfer, which leave spend/income unchanged); `/metrics` and `/health` answer.
 
 ## Phase 1 — Ingestion recipes
 

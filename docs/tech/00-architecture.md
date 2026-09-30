@@ -42,7 +42,7 @@ finassis/
 ├── i18n/                 shared message catalogues (en source, vi) consumed by api/ (channels, narration) and console/;
 │                         tag.* and unit.* entries are generated from seeds/
 ├── docs/                 product/ · tech/ · ui/
-├── docker-compose.yml    api, worker, console, postgres, redis, grafana, prometheus
+├── docker-compose.yml    api, worker, postgres, redis (console later; prometheus/grafana optional, see tech/06)
 ├── Makefile              dev shortcuts: up, api, console, contract (export openapi → regen client), test
 └── README.md
 ```
@@ -139,4 +139,4 @@ Steps 2–3 are safe to run concurrently from multiple replicas (advisory lock).
 
 ## Deployment
 
-Docker Compose everywhere to start: api, worker, console, postgres, redis, prometheus, grafana on one VM; `api` and `console` are separate images from separate Dockerfiles. Postgres tuned for a small box (shared_buffers, work_mem sized to the instance; `pg_stat_statements` on from day one). Backups: Postgres PITR or nightly dump to object storage; Redis is disposable (streams are replayable from `raw_events`). When growth demands it: move Postgres to a managed service, add workers, add API replicas — no code change required.
+Docker Compose everywhere to start: api, worker, postgres, redis on one VM (console when it exists; Prometheus/Grafana optional, snippet in tech/06); `api` and `console` are separate images from separate Dockerfiles. Postgres tuned for a small box (shared_buffers, work_mem sized to the instance; `pg_stat_statements` on from day one). Backups: Postgres PITR or nightly dump to object storage; Redis is disposable (streams are replayable from `raw_events`). When growth demands it: move Postgres to a managed service, add workers, add API replicas — no code change required.

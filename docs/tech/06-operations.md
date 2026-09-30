@@ -20,7 +20,30 @@ Everything that costs money is metered from day one, using the same pattern as t
 | Queue | stream length, pending count, consumer lag per group |
 | Webhooks | deliveries, failures, retry depth |
 
-Grafana + Prometheus in the same Compose file is the **operator console for Phase 0**. No custom UI needed for operating the stack.
+The API exposes these at `GET /metrics` (Prometheus text format) from day one. Prometheus and Grafana are **not** in the default compose stack yet — one instance, few users, `curl /metrics` and the logs suffice. When you want dashboards, add this to `docker-compose.yml` (and a `prometheus.yml` scraping `api:8000/metrics`):
+
+```yaml
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    volumes: ["./ops/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["9090:9090"]
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment: { GF_SECURITY_ADMIN_PASSWORD: admin }
+    volumes: ["grafana:/var/lib/grafana"]
+    ports: ["3000:3000"]
+    depends_on: [prometheus]
+```
+
+```yaml
+# ops/prometheus.yml
+global: { scrape_interval: 15s }
+scrape_configs:
+  - job_name: finassis-api
+    static_configs: [{ targets: ["api:8000"] }]
+```
+
+Grafana + Prometheus then become the operator console until a real one exists.
 
 ## Usage metering
 

@@ -16,7 +16,7 @@ Goal (from the roadmap): register via the bot, mint an API key, post transaction
 - Telegram channel inside the API: webhook endpoint, `/start`, `/link`, `/keys`, `/lang`, `/help`, through the `FinassisClient` port (in-process implementation).
 - Worker: rollup re-close from `dirty_periods`, daily balance + net-worth snapshots, partition maintenance, interaction expiry. Simple asyncio scheduler; Redis Streams consumer scaffolding.
 - Prometheus `/metrics`; structured JSON logs.
-- Dockerfile (multi-stage, `uv`), compose with postgres/redis/api/worker/prometheus/grafana.
+- Dockerfile (multi-stage, `uv`), compose with postgres/redis/api/worker (Prometheus/Grafana deferred; snippet in tech/06).
 
 **Out (Phase 1+)**: `/raw`, recipes, tagging cascade beyond caller-supplied, embeddings, income streams/projections, holdings/prices/valuations, budgets, webhooks delivery, console, MCP server (the port exists; the MCP adapter comes with Phase 2).
 
@@ -75,11 +75,15 @@ Raw SQL via **asyncpg** with small typed helpers; no ORM. The schema is hand-wri
 5. Ledger: transactions write (simple/explicit), postings, incremental rollups, pair detection; list/get/reverse; balances; spend/income reports.
 6. Annotations, interactions, identities/link codes, keys endpoints, admin endpoints.
 7. Telegram channel + FinassisClient port.
-8. Worker jobs; Dockerfile; compose; Prometheus/Grafana.
+8. Worker jobs; Dockerfile; compose.
 9. Tests; `make api-test`; docs sync.
+
+## Status (2026-10-01)
+
+Implemented: everything under *In* above. Verified in this environment: Python compile of all modules, 13 unit tests (money envelope, i18n rendering and fallbacks, occurred_at parsing, request schemas, key/scope logic, app construction, OpenAPI with 37 paths, `/metrics`, Telegram-disabled 404), `schema.sql` parse with the Postgres parser, seeds and i18n checks. **Not yet executed** (no Postgres/Docker in the authoring sandbox): the Alembic migration, seed loader, bootstrap, the integration tests in `api/tests/integration/`, `api/db/smoke.sql`, and the Docker build. Run `make up` then `make api-itest` and `make db-check`; expect small fixes (SQL typing, RLS edge cases), not design changes.
 
 ## Definition of done
 
-- `docker compose up` brings up postgres, redis, api, worker, grafana; `GET /api/v1/health` returns ok; logs show the bootstrap admin key once.
+- `docker compose up` brings up postgres, redis, api, worker; `GET /api/v1/health` returns ok; logs show the bootstrap admin key once.
 - With that key: create a user via admin API (or via Telegram `/start` with a configured bot), mint a user key, create two bank accounts, post an expense, post both sides of a transfer tagged `off_report.self_transfer`, read `/balances` and `/reports/spend` — spend equals the expense only.
 - `make check` passes; `make api-test` unit tests pass without a database; integration tests pass against `make db-up`.
