@@ -81,6 +81,8 @@ jobs:
       - name: Migrate + seed + bootstrap (the real startup path)
         run: |
           .venv/bin/finassis migrate
+          psql "$FINASSIS_DATABASE_URL" -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'" | tee tables.txt
+          test "$(cat tables.txt)" -gt 40 || (echo "migration did not create tables" && exit 1)
           .venv/bin/finassis seed
           .venv/bin/finassis partitions
           .venv/bin/finassis bootstrap | tee bootstrap.log

@@ -1,5 +1,10 @@
 """Alembic environment: synchronous psycopg (v3) engine so a multi-statement schema.sql can be
-executed as one script (asyncpg prepared statements cannot). Serialised with an advisory lock."""
+executed as one script (asyncpg prepared statements cannot). Serialised with a session-level
+advisory lock.
+
+Careful: SQLAlchemy 2 autobegins a transaction on the first statement. If we take the lock and leave
+that transaction open, Alembic sees an externally managed transaction and does NOT commit — the whole
+migration silently rolls back on connection close. So we commit right after locking/unlocking."""
 
 from __future__ import annotations
 
@@ -30,12 +35,14 @@ def run_migrations_online() -> None:
     engine = create_engine(_url(), pool_pre_ping=True)
     with engine.connect() as connection:
         connection.execute(text("SELECT pg_advisory_lock(hashtext('finassis.migrate'))"))
+        connection.commit()  # end the autobegun txn; the advisory lock is session-level and survives
         try:
             context.configure(connection=connection, target_metadata=None, transaction_per_migration=True)
             with context.begin_transaction():
                 context.run_migrations()
         finally:
             connection.execute(text("SELECT pg_advisory_unlock(hashtext('finassis.migrate'))"))
+            connection.commit()
     engine.dispose()
 
 
