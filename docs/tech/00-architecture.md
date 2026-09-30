@@ -38,7 +38,9 @@ finassis/
 │       └── db/           models, RLS helpers
 ├── console/              Next.js UI — separate app, own Dockerfile (see docs/ui/)
 ├── connectors/           n8n templates and small scripts that end in POST /raw
-├── i18n/                 shared message catalogues (en source, vi) consumed by api/ (channels, narration) and console/
+├── seeds/                machine-readable reference data (tags.json, units.json + JSON Schemas); loaded idempotently at startup
+├── i18n/                 shared message catalogues (en source, vi) consumed by api/ (channels, narration) and console/;
+│                         tag.* and unit.* entries are generated from seeds/
 ├── docs/                 product/ · tech/ · ui/
 ├── docker-compose.yml    api, worker, console, postgres, redis, grafana, prometheus
 ├── Makefile              dev shortcuts: up, api, console, contract (export openapi → regen client), test
@@ -83,7 +85,9 @@ REST, MCP and the Telegram channel are three thin adapters in one process over o
 
 ## Request paths
 
-**Structured write** — `POST /transactions` → validate → domain service writes transaction + postings in one DB transaction → emits `posting.committed` to Redis Stream → returns 201. Rollup job consumes the event and updates the affected period buckets incrementally.
+All routes are versioned under `/api/v1/`; the console proxy forwards `/api/*`.
+
+**Structured write** — `POST /api/v1/transactions` → validate → domain service writes transaction + postings in one DB transaction → emits `posting.committed` to Redis Stream → returns 201. Rollup job consumes the event and updates the affected period buckets incrementally.
 
 **Raw write** — `POST /raw {text, source?}` → store `raw_event` → enqueue → worker fingerprints, finds a recipe, runs it (pure Python, ms) → output validated against `transaction.v1` → reconcile → commit via the same domain service as the structured path. No recipe or validation failure → `review_item` + `review.needed`. The LLM is never called here.
 
@@ -121,6 +125,17 @@ REST, MCP and the Telegram channel are three thin adapters in one process over o
 - Structured JSON logs with `user_id`, `request_id`, `event_id`.
 - OpenTelemetry traces across API → worker via event metadata.
 - Metrics: ingest latency, recipe hit rate, recipe failure rate per version, review-queue depth, rollup lag, compiler calls and tokens per user.
+
+## Startup sequence
+
+1. Load and validate config (Pydantic settings).
+1b. **Bootstrap admin** (idempotent): ensure one admin user exists. If `BOOTSTRAP_ADMIN_TELEGRAM_ID` is set, attach that Telegram identity to it. If `BOOTSTRAP_ADMIN_API_KEY` is set, ensure an `admin`-kind key with that value exists; **if it is not set and no admin key exists yet, generate one, print it to stdout once** (`BOOTSTRAP: admin API key = …`), and store only its hash — it is never printed again. The Telegram bot token itself is app config (`TELEGRAM_BOT_TOKEN`); there is one bot, ours; users never hold bot tokens.
+2. `alembic upgrade head` — schema is owned by migrations; a rendered `schema.sql` is kept in `api/db/` for reading, never applied directly.
+3. **Seed loader** — for each file in `seeds/`: validate against its JSON Schema, compare `version` + content hash with `seed_versions`, upsert by natural key (`system_key`, `code`), never delete, never touch rows with `user_id`. Removed system rows are marked deprecated.
+4. Warm caches (units, active tag list, keyword dictionary) into Redis.
+5. Start the API (and, in the worker entrypoint, stream consumers and the scheduler).
+
+Steps 2–3 are safe to run concurrently from multiple replicas (advisory lock).
 
 ## Deployment
 

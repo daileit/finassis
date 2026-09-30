@@ -9,10 +9,11 @@ Each phase is shippable and used for real (by us) before the next starts. Scope 
 - `POST /transactions`, account/tag CRUD, `GET /balances`.
 - Period rollups (incremental + nightly re-close) and daily balance/net-worth snapshots.
 - Annotations table and endpoints.
-- `interactions` and `identities` models with REST endpoints.
+- `interactions` and `identities` models with REST endpoints; system accounts (receivable, payable) on demand.
+- Bootstrap admin from config (key generated and printed once if absent). **Minimal Telegram slice**: `/start`, `/link`, `/keys`, `/lang` — enough to register and mint an API key without a console.
 - Usage metering middleware, `usage_events`/rollups, default free plan, `/metrics`, Grafana in Compose.
 
-Exit: our own daily spending and bank balances live in it, entered via API; Grafana shows the stack's health.
+Exit: register via the bot, mint a key, post transactions via API (incl. both sides of a two-bank transfer, which leave spend/income unchanged); Grafana shows the stack's health.
 
 ## Phase 1 — Ingestion recipes
 
@@ -25,7 +26,7 @@ Exit: our own daily spending and bank balances live in it, entered via API; Graf
 - kNN over confirmed examples (pgvector + small multilingual embedding model in the worker).
 
 - First connector as an n8n template: email body → `/raw`.
-- **Telegram channel** inside the API: `/start` registration, forward text → `/raw` → transaction card, tag confirmation via inline keyboard, `/balance` `/spend` `/untagged` `/review`, `/keys` `/lang` `/currency`, pushes from the worker.
+- **Telegram channel, full**: forward text → `/raw` → transaction card, tag confirmation via inline keyboard, `/balance` `/spend` `/untagged` `/review` `/inbox`, `/currency` `/tz`, pushes from the worker.
 
 Exit: forward a bank SMS to the bot, transaction appears with a tag; fix the tag with one tap; never opened a browser.
 
@@ -65,3 +66,4 @@ Exit: Claude with the MCP attached answers "how much cash at Tết" correctly.
 - Receipt image OCR → recipe.
 - Goals and what-if support data.
 - Paid: unit conversion of quantity history and combined single-unit snapshots.
+- Transfer pairing: link two independently received halves via a `transit` clearing account (ADR-027).

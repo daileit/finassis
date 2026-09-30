@@ -57,6 +57,37 @@ Every monetary field follows the agent-consumption envelope: `{value, currency, 
 - `GET /admin/config`, `POST /admin/config/reload`, `GET /admin/jobs`, `POST /admin/jobs/{name}/run`
 - `GET /admin/audit?…`
 
+## Transaction write shape (`POST /api/v1/transactions`)
+
+Two mutually exclusive forms. **Simple** covers expenses, income and two-account transfers; **explicit** covers splits and anything else.
+
+```jsonc
+// simple
+{
+  "account": "tcb-main",              // required: account id or alias
+  "amount": -250000,                  // required: integer minor units, signed; negative leaves the account
+  "currency": "VND",                  // optional: defaults to the account's currency
+  "occurred_at": "2026-10-01",        // required: date or timestamptz; date-only → 00:00 user tz
+  "description": "Grab to office",    // optional
+  "tag": "ride_hailing",              // optional: key or custom tag id; omitted → tagging cascade
+  "counter_account": "cash",          // optional: present → transfer (two postings), default tag off_report.self_transfer
+  "quantity": {"value": "2", "unit": "chi"}, "instrument": "sjc-9999",   // optional: holdings
+  "labels": ["#trip-danang"],         // optional, free-form
+  "idempotency_key": "…"              // optional
+}
+// explicit
+{
+  "occurred_at": "…", "description": "…",
+  "postings": [
+    {"account": "tcb-main", "amount": -500000, "currency": "VND"},
+    {"tag": "groceries",  "amount": 350000},
+    {"tag": "household",  "amount": 150000}
+  ]
+}
+```
+
+Rules: a simple write expands to two postings internally (account + tag, or account + counter_account); explicit postings must balance per currency; `tag` and `counter_account` are mutually exclusive in the simple form; unknown `tag` → `409 unknown_tag` with suggestions. Response is the transaction with postings, tag source/confidence and the money envelope.
+
 ## Contract hygiene
 
 - OpenAPI 3.1 at `/openapi.json`, with `operationId`s stable enough to generate a client; tagged by area.

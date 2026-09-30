@@ -6,15 +6,17 @@ Three tracking capabilities over one ledger, one ingestion feature in front of i
 
 - Record a spend via the structured API (the only path to the ledger), or via an ingestion recipe that turns a bank SMS/email/CSV into a structured call.
 - **Tagging** into a controlled tree: fixed roots (ăn uống, nhà ở, đi lại, ...), system children we ship, and custom children the user adds. A tag is set by the caller, a recipe, a user rule, merchant memory, the user's own confirmed history (vector fingerprint), or — last and cheapest per row — a nightly LLM batch whose proposals the user confirms. Untagged is a valid state. See [03-tags.md](03-tags.md).
-- Splits, transfers between own accounts, refunds linked to the original spend.
+- Splits, refunds linked to the original spend.
+- Nothing you don't want counted pollutes spend or income: the **Not counted** tag group holds self-transfers, savings deposits, investment buys, loan principal, card payments, reimbursables and test entries. A matching −X/+X pair between two of your accounts is detected and tagged automatically; anything else you pick from suggestions or add your own child under that group.
 - Budgets per tag per period, with pace ("70% of Dining, 10 days left").
 - Recurring-expense detection from statistics (same merchant, similar amount, regular interval).
 - Merchant normalisation (`GRAB*A1B2C3` → Grab) via recipe or rule.
 
 ## 2. Earning tracking
 
-- Salary/wages (scheduled), freelance/invoices (irregular), investment income (dividends, interest, term-deposit maturity, rental, staking), one-offs.
-- **IncomeStream**: a schedule + expected amount or yield rule. Projected postings are materialised into the future and reconciled against actuals. Missed or short income raises an alert. This powers "cash at Tết" style questions.
+- **Earnings are what you expect and what your assets pay.** The Earnings view is built from **IncomeStreams**: ones you declare (salary on the 25th, rent monthly, freelance retainer) and ones Finassis derives from your assets (a term deposit's rate and maturity, a bond coupon, a fund distribution, dividends per share). Each shows expected vs. received; missed or short income raises an alert. This powers "cash at Tết" style questions.
+- Any other money in — a refund, lì xì, a friend paying you back — is still recorded as a transaction with an income tag and counts in cash-flow income as *ad-hoc*, but it doesn't clutter Earnings.
+- Held assets don't produce income by going up in value; that shows in Wealth as unrealised gain. Income is what arrives: interest, dividends, rent, and realised gains when something is sold.
 
 ## 3. Wealth tracking
 

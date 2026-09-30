@@ -140,9 +140,32 @@ Quantities are **aggregated per unit** and never auto-converted: 3 oz_troy and 3
 **Separation is designed in:** the bot never imports domain services. It depends on a `FinassisClient` port (in-process implementation now, generated HTTP client later) and an `EventSource` port (Redis stream now, webhooks/SSE later), selected by config. A `channel` API-key kind with `X-Act-As-User` is defined in the auth model now so the split needs no auth redesign. Contract tests run the bot against both client implementations.
 **Rejected:** bot as a separate service *today*; bot importing the domain layer directly (blocks the split); conversational state held in the bot; Telegram-specific features that the console/MCP could not also resolve. Zalo first (OA API restrictions) — later channel.
 
+## ADR-025 — Reference data lives in `seeds/` as JSON, validated by schema, loaded idempotently at startup
+
+**Decision:** System tags, units and future reference sets (default recipes, keyword dictionaries, plan definitions) are stored as JSON files under `seeds/` with JSON Schemas, not in markdown tables or hand-written SQL. Docs describe rules and point at the files. On startup, after Alembic migrations, a loader validates each file, compares `version` + hash against `seed_versions`, and upserts by natural key without deleting or touching user rows. Names in seeds are extracted into `i18n/` at build time.
+**Why:** One source that the application, the docs, the console and future design conversations all reference by key; no transcription drift; new system tags reach existing users on deploy; user customisations are never overwritten.
+**Rejected:** markdown tables as the source (already drifted once); seed SQL files (not diffable by meaning, no schema validation); baking reference data into migrations (couples data changes to schema versions).
+
+## ADR-026 — Single-user tenancy; households are a future join, not a tenant level
+
+**Decision:** `user_id` is the tenant. A future "family view" will be a sharing/grant table joining users' data for reads (and scoped writes), not a `household_id` above `user_id`. Closed for Phase 0.
+**Why:** Keeps RLS, keys, metering and every table simple; a join can be added later without migrating tenancy.
+
+## ADR-027 — Transfers are plain signed transactions with `off_report.*` tags; pairing is a later option
+
+**Decision:** Each side of a transfer between the user's own accounts is an ordinary transaction: sign gives direction, an `off_report.*` tag gives purpose. Because the tag root is `off_report`, spend and income are unchanged; once both sides are recorded, net worth is unchanged. When the caller knows both sides (`counter_account` or explicit two-account postings) it is one transaction with two postings. Linking two independently received halves via a `transit` clearing account and `pending_match` status is designed but deferred to *Later*.
+**Why:** Exclusion already delivers "zero change on reports"; full pairing adds a clearing account, a matching window and an interaction flow for a convenience. Ship the simple version, add pairing if one-sided transfers turn out to be a real problem.
+**Amended (twice):** report exclusion is a **root tag**, `off_report` (kind `off_report`), whose children — the transfer purposes plus `reimbursable` and `ignore`, and any custom child — never count as spend or income. No boolean flag, no per-transaction override: the user tags or re-tags. An earlier amendment used an `exclude_from_reports` flag; superseded because a tag the user can see and pick beats a hidden property. A **light pair detection** step auto-tags an opposite-sign, equal-amount pair between two own accounts within ±2 days as `off_report.self_transfer` and links them with `pair_id`; no clearing account or pending state.
+**Known limitation:** one-sided entry leaves net worth off by X until the other side is recorded; surfaced in the digest.
+**Also decided here:** `POST /api/v1/transactions` accepts a *simple* form (account, signed amount, occurred_at, optional tag or counter_account) that expands to two postings, or an *explicit* `postings[]` form for splits; `occurred_at` is timestamptz with date-only inputs at local midnight; all routes live under `/api/v1/`; the first admin is bootstrapped from config, with the admin key generated and printed once to stdout if not provided; the minimal Telegram slice (`/start`, `/link`, `/keys`) is in Phase 0 because it is the only way to mint a user API key without a console.
+
+## ADR-028 — Earnings is the declared layer over income transactions; unrealised appreciation is never income
+
+**Decision:** Every money-in is a transaction in the one ledger (cash-flow totals include it). **Earnings** is a separate *declared* layer: `income_streams` set up by the user (salary, rent) or **derived from assets** (`derived_from_account_id` / `derived_from_instrument_id` — a term deposit's `terms`, a bond coupon, a fund distribution). The Earnings view shows streams, expected vs. received, and asset yield. Ad-hoc income is a plain transaction with an income tag; it counts in cash-flow income as *ad-hoc* and does not appear in Earnings. `income total = fulfilled streams + ad-hoc`. Within the ledger, type is the tag, location is the account, expectedness is `income_stream_id`. Held assets produce no income while their price moves; realised gains on sale are generated as `capital_gains` postings against cost basis.
+**Why:** Users think of "my earnings" as what they expect and what their assets pay, not every stray credit. Keeping the ledger single (ADR-001) keeps cash flow truthful; putting the declared layer on top gives the Earnings feature its own shape without a second ledger. Keeping unrealised gains out of income is what makes cash-flow and savings-rate numbers honest.
+
 ## Open questions
 
-- Household / shared ledgers: separate `tenant_id` above `user_id`, or a sharing table? Decide before Phase 3.
 - Lot-matching method for realised gains (FIFO default; per-account override?).
 - Initial price/FX sources for VND, USD, SJC gold, VN stocks (free-tier limits, scraping legality).
 - Pricing of a *combined* gold position when purities differ (SJC 9999 vs 18K) is per instrument, but should the UI offer a "total fine gold" line? Only as part of the paid conversion feature.

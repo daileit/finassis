@@ -106,7 +106,21 @@ Outcomes: **new** → commit · **duplicate** → link raw_event to existing tra
 
 Typical VN case: the same purchase appears as a bank SMS *and* a bank email; reconciliation must collapse them.
 
-## 5b. Tagging
+## 5b. Transfers between own accounts (v1: simple)
+
+Moving money between two of the user's own banks produces two notifications — a debit from A and a credit to B. In v1 each is **its own transaction**: `A −X` and `B +X`, both tagged `off_report.*` (default `self_transfer`). Sign gives direction; tag gives purpose. Because the tag root is `off_report`, spend and income totals are unchanged; because one side leaves an asset and the other enters one, net worth is unchanged once both are recorded. No pairing logic, no clearing account.
+
+**Exclusion is a root tag, not a flag.** The `off_report` root (kind `off_report`) holds every purpose that must not count as spend or income: `self_transfer`, `cash_withdrawal`, `ewallet_topup`, `savings_deposit`, `investment_buy`/`sell`, `loan_principal`, `credit_card_payment`, lending/borrowing pairs, `reimbursable`, `ignore`, plus any custom child the user adds. Rollups skip postings whose tag root is `off_report`; savings-rate and investment-flow reports read those children explicitly. To exclude something, tag it here (or pick it from the suggestions); to include it, re-tag.
+
+**Self-transfer detection (light pairing).** After commit, look for a transaction on another of the user's own asset accounts with the opposite sign, equal amount (same currency), within ±2 days, not already paired. If found: tag both `off_report.self_transfer` — or `off_report.credit_card_payment` / `loan_principal` when one side is a liability account — unless either already carries an `off_report.*` tag; set a shared `pair_id`, and — if either had been auto-tagged as expense/income — reverse that effect in rollups. No clearing account, no pending state: if the second half never arrives, the first keeps whatever tag the cascade gave it and the user can fix it. Detection is a single indexed query on `(user_id, amount, occurred_at)`.
+
+Known limitation: if the user records only one side (forwards bank A's SMS, never B's), net worth is off by X until the other side is entered; a "one-sided transfers this week" line in the digest surfaces it.
+
+When the caller *does* know both sides (`counter_account` in the simple API form, or an explicit two-account `postings[]`), the transfer is written as one transaction with two postings.
+
+**Later (optional):** full pairing via a per-user `transit` clearing account and a `pending_match` status, with an interaction for halves still unmatched after N days. Designed, not built; see ADR-027.
+
+## 5c. Tagging
 
 Runs after reconcile, before commit, for any posting without a caller-supplied tag. Cheapest first, stop at the first confident hit; full design in [product/03-tags.md](../product/03-tags.md).
 

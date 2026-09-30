@@ -4,7 +4,7 @@ Everything that costs money is metered from day one, using the same pattern as t
 
 ## Configuration
 
-- **Env vars** for secrets and deployment-specific values (`DATABASE_URL`, `REDIS_URL`, `AI_API_KEY`, `JWT_SIGNING_KEY`, `PUBLIC_BASE_URL`).
+- **Env vars** for secrets and deployment-specific values (`DATABASE_URL`, `REDIS_URL`, `AI_API_KEY`, `JWT_SIGNING_KEY`, `PUBLIC_BASE_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `BOOTSTRAP_ADMIN_TELEGRAM_ID`, `BOOTSTRAP_ADMIN_API_KEY` — optional; generated and logged once if absent).
 - **`config.yaml`** for behaviour: plan definitions, default limits, recipe interpreter timeboxes, snapshot cadence, FX/price feed settings, compiler model + prompt version, retention. Hot-reloadable where safe (plans, limits), restart otherwise.
 - Config is validated by a Pydantic settings model at boot; the effective config (secrets redacted) is exposed at `GET /admin/config`.
 

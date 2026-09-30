@@ -69,16 +69,25 @@ users
 
 accounts
   id, user_id, name, type, currency, valuation_mode, is_liability, liquidity (liquid | semi | illiquid),
+  terms jsonb (nullable),                  -- for yield-bearing accounts: {"rate":0.055,"term_months":6,"opened_at":…,"matures_at":…,"payout":"at_maturity|monthly"}
+                                           -- drives a derived income_stream (see Income)
+  purpose (nullable enum: emergency_fund | retirement | education | house | vehicle | travel | general | business),
+  labels text[],
   expected_refresh_interval interval (nullable; staleness threshold for mark_to_market),
   parent_id (nullable, for grouping), institution, external_ref, is_archived, created_at
 
-  type            ∈ cash | bank | credit_card | loan | brokerage | crypto | real_estate |
-                    vehicle | pension | private_equity | collectible | other
+  type            ∈ cash | bank | term_deposit | credit_card | loan | brokerage | crypto | real_estate |
+                    vehicle | pension | private_equity | receivable | payable | collectible | other
+  is_system bool  -- system accounts are created per user on demand and cannot be deleted:
+                  --   receivable  "People I lent to"   (first off_report.lending_*)
+                  --   payable     "People I owe"       (first off_report.borrowing_*)
+                  -- (a `transit` clearing account for transfer pairing is a later, optional addition — 03 §5b)
   valuation_mode  ∈ ledger | mark_to_market
 
 tags                                        -- controlled taxonomy; see product/03-tags.md
   id, user_id (NULL = system), system_key (nullable; system tags only), name (custom tags only),
-  root_id (NULL for roots), kind (expense | income | transfer; set on roots, inherited), 
+  root_id (NULL for roots), kind (expense | income | off_report; set on roots, inherited), 
+  -- exclusion from spend/income/budget reports is a property of the root: kind = off_report (no boolean)
   is_custom bool, icon, sort_order, created_at
   CHECK (is_custom → user_id IS NOT NULL AND root_id IS NOT NULL)      -- customs are children only
   CHECK (NOT is_custom → user_id IS NULL AND system_key IS NOT NULL)
@@ -88,9 +97,17 @@ tag_prefs                                   -- per-user view of system tags
   PK (user_id, tag_id)
 
 transactions
-  id, user_id, occurred_at, booked_at, description, merchant_id (nullable),
-  source (api | import | inbox | projection | system), raw_event_id (nullable),
-  status (posted | projected | void), reverses_id (nullable), metadata jsonb
+  id, user_id, occurred_at timestamptz, booked_at timestamptz, description, merchant_id (nullable),
+  source (api | raw | projection | system), 
+  status (posted | projected | void), reverses_id (nullable),
+  income_stream_id (nullable → income_streams; set when this posting fulfils an expected income),
+  pair_id (nullable uuid; shared by the two halves of an auto-detected self-transfer, see 03 §5b),
+  metadata jsonb
+  -- raw events link to transactions via raw_events.transaction_id
+  -- a posting is excluded from spend/income/budget rollups iff its tag's root has kind = off_report
+
+  Time: occurred_at is timestamptz. Date-only inputs (bank SMS) become 00:00 in the user's timezone.
+        booked_at is when Finassis recorded it. Reports bucket by occurred_at in the user's timezone.
 
 postings                                    -- append-only, partitioned by (user_id hash, occurred_at month)
   id, user_id, transaction_id, account_id,
@@ -165,11 +182,29 @@ Returned alongside the object they describe in every read API; agents may create
 
 ## Income
 
+**Two layers.** Every money-in is a *transaction* (ledger truth; cash-flow totals must include it). **Earnings** is the *declared* layer on top: `income_streams` the user set up (salary, rent) or that Finassis derives from assets (a term deposit's rate and maturity, a bond coupon, a fund distribution). The Earnings view shows streams, expected vs. received, and yield on assets. An ad-hoc `+` is a plain transaction with an income tag: it counts in cash-flow income as *ad-hoc* but does not appear in Earnings. `income total = fulfilled streams + ad-hoc`.
+
+Within the ledger, three existing dimensions distinguish every income type:
+
+| Dimension | Says | Examples |
+|---|---|---|
+| tag | *what kind* | `salary_main`, `bonus`, `interest`, `dividends`, `rental`, `capital_gains`, `gifts_received` |
+| account | *where it landed* | salary → bank; term-deposit interest paid out → bank, or capitalised → the term-deposit account itself (same tag) |
+| `income_stream_id` | *it was expected* | salary on the 25th, rent monthly, coupon quarterly; ad-hoc income has none |
+
+Mapping of common cases: ad-hoc money in → income tag, no stream. Salary → `salary_main` + stream; actual reconciles a `projected_income` row. Term-deposit interest → `interest` (account per bank behaviour); principal at maturity → `off_report.savings_withdrawal`, not income. Mutual fund / stock held → **no income**; value change is a price movement shown as unrealised gain in wealth. On sale → `off_report.investment_sell` plus an auto-generated `capital_gains` posting for the realised difference against cost basis. Distributions → `dividends`.
+
+Rule: **unrealised appreciation is never income.** Income is only what arrives as a posting.
+
 ```
-income_streams
+income_streams                           -- the declared/expected layer ("Earnings")
   id, user_id, name, account_id (where it lands), tag_id, currency,
   schedule (rrule string), amount_rule jsonb
-      -- {"type":"fixed","amount":5000} | {"type":"yield","holding_id":…,"annual_rate":0.04}
+      -- {"type":"fixed","amount":5000}
+      -- {"type":"yield","annual_rate":0.055,"basis":"balance"}          -- term deposit: rate × principal
+      -- {"type":"per_unit","amount":1200,"instrument_id":…}             -- dividend per share
+  derived_from_account_id (nullable),      -- stream generated from an asset's terms (term deposit, bond, fund);
+  derived_from_instrument_id (nullable),   -- regenerated when the asset's terms change
   expected_variance_pct, is_active, next_expected_at
 
 projected_income                         -- materialised expectations
@@ -271,6 +306,14 @@ interactions   pending questions for the user with ≤ 6 options; rendered/resol
 identities     (provider, provider_id) → user_id; telegram first, google via console later
 link_codes     single-use codes to attach a new identity to an existing user
 ```
+
+## Seeds
+
+```
+seed_versions   file, version int, content_hash, applied_at      -- loader bookkeeping (see tech/00 "Startup sequence")
+```
+
+Reference rows in `units` and `tags` (where `user_id IS NULL`) are owned by `seeds/*.json` and upserted on startup; they are never edited by hand in the database.
 
 ## Metering, plans, auth (see 06 and ui/)
 

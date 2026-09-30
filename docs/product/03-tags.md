@@ -4,7 +4,7 @@ A **tag** is the controlled label that puts a transaction into a budget and a re
 
 ## Structure
 
-- **Root tags** are fixed by Finassis. Each carries a `kind`: `expense`, `income` or `transfer`. Users cannot add, remove or re-kind roots; they can hide or rename them for display.
+- **Root tags** are fixed by Finassis. Each carries a `kind`: `expense`, `income` or `off_report`. Users cannot add, remove or re-kind roots; they can hide or rename them for display.
 - **Child tags** are either **system** (shipped by us, extensible via seed migrations) or **custom** (created by the user under a system root). Customs exist only at the child level; this keeps every rule simple: every tag has a root, every root has a kind.
 - The list a user sees is the **combined** list: system children ∪ their customs, minus hidden ones, with their renames applied.
 - Every system tag has an English `system_key`; recipes, rules, community content and reports reference the key, never the display name.
@@ -12,7 +12,9 @@ A **tag** is the controlled label that puts a transaction into a budget and a re
 
 ## Default taxonomy
 
-Vietnamese names shown for flavour; the console translates system tags from `system_key` with `en` fallback.
+The complete tree — every system key with en/vi names, default on/off state and keyword seeds — is machine-readable in [`seeds/tags.json`](../../seeds/tags.json) (18 roots, 108 children, 80 active by default with a note to trim toward ~60); rules and reasoning in [04-tag-taxonomy.md](04-tag-taxonomy.md). Summary below for orientation only.
+
+Tagging at **root level** is allowed and means "this root, unsure which child," so there are no `*_other` children. `misc` is for "understood but fits nowhere"; `untagged` is "not known yet."
 
 ### Expense roots
 
@@ -20,7 +22,7 @@ Vietnamese names shown for flavour; the console translates system tags from `sys
 |---|---|
 | `food` — Ăn uống | `groceries` chợ/siêu thị · `dining` ăn ngoài · `coffee_drinks` cà phê/trà sữa · `delivery` giao đồ ăn · `snacks` ăn vặt |
 | `housing` — Nhà ở | `rent` · `mortgage` · `utilities` điện nước · `internet_tv` · `maintenance` sửa chữa · `furnishing` nội thất · `building_fees` phí quản lý |
-| `transport` — Đi lại | `fuel` xăng · `ride_hailing` Grab/Be/Xanh · `public_transit` · `parking_tolls` · `vehicle_maintenance` · `vehicle_fees` đăng kiểm/bảo hiểm xe · `flights_trains` |
+| `transport` — Đi lại | `fuel` xăng · `ride_hailing` Grab/Be/Xanh · `public_transit` · `parking_tolls` · `vehicle_maintenance` · `vehicle_fees` đăng kiểm/bảo hiểm xe · `ev_charging` |
 | `shopping` — Mua sắm | `clothing` · `electronics` · `household` đồ gia dụng · `online_marketplace` Shopee/Lazada/Tiki · `beauty` |
 | `health` — Sức khỏe | `medical` khám chữa · `pharmacy` thuốc · `health_insurance` · `fitness` |
 | `family` — Gia đình | `children` · `kids_education` học phí · `parents_support` biếu cha mẹ · `pets` |
@@ -39,11 +41,17 @@ Vietnamese names shown for flavour; the console translates system tags from `sys
 | `investment_income` — Đầu tư | `dividends` · `interest` lãi tiết kiệm · `rental` cho thuê · `capital_gains` · `staking_yield` |
 | `other_income` — Khác | `gifts_received` · `lucky_money_received` · `refunds` hoàn tiền · `debt_repaid` thu nợ · `government` |
 
-### Transfer roots (excluded from spend and income)
+### Off-report root (excluded from spend and income)
 
 | Root | Children |
 |---|---|
-| `transfer` — Chuyển tiền | `own_accounts` · `savings_contribution` · `lending_out` cho vay · `borrowing_in` vay |
+| `off_report` — Không tính vào báo cáo | `self_transfer` · `cash_withdrawal` · `ewallet_topup` · `savings_deposit` · `investment_buy` / `investment_sell` · `loan_principal` · `credit_card_payment` · `lending_out` / `lending_repaid` · `borrowing_in` / `borrowing_repaid` · `reimbursable` · `ignore` · … |
+
+Exclusion is a *tag*, not a hidden flag: anything under `off_report` (system or custom) never counts as spend or income. Transfers are tagged by *purpose* because savings rate and investment inflow — the numbers VN users care about most — read these children explicitly. A matched −X/+X pair between two of your accounts is auto-tagged `self_transfer` (or `credit_card_payment` when one side is a card).
+
+### Earnings and assets
+
+Earnings use the same tree (`kind = income`). **Assets are not tagged** with this tree; they are classified by `asset_class`, `liquidity` and a small `purpose` enum (emergency fund, retirement, education, house, …) plus free labels. The *events* around assets (buy, sell, deposit, principal, dividends) are postings and carry `off_report.*` / `investment_income.*` tags. See the end of [04-tag-taxonomy.md](04-tag-taxonomy.md#assets-are-not-tagged).
 
 ## How a transaction gets its tag
 
@@ -89,4 +97,4 @@ The system embeds the **tag list itself** once — each system tag's key, `vi`/`
 
 ## Budgets and reports
 
-Budgets attach to any tag (root or child). Reports roll up by root by default with drill-down to children. `transfer` roots are excluded from spend and income totals. `untagged` appears in reports with a count and a link to the triage screen.
+Budgets attach to any tag (root or child). Reports roll up by root by default with drill-down to children. Postings under the `off_report` root are excluded from spend and income totals. `untagged` appears in reports with a count and a link to the triage screen.
