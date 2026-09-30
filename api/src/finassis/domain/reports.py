@@ -19,12 +19,12 @@ async def balances(conn: Conn, user_id: uuid.UUID, units: UnitRegistry, locale: 
     rows = await conn.fetch(
         """WITH snap AS (
              SELECT DISTINCT ON (account_id, currency) account_id, currency, balance, last_posting_id
-             FROM balance_snapshots WHERE user_id = $1 AND as_of <= $2::date
+             FROM balance_snapshots WHERE user_id = $1 AND as_of <= ($2::timestamptz)::date
              ORDER BY account_id, currency, as_of DESC
            )
            SELECT a.id AS account_id, a.name, a.type, a.is_liability, a.is_system, a.liquidity, a.currency AS account_currency,
                   p.currency,
-                  COALESCE(s.balance, 0) + COALESCE(sum(p.amount) FILTER (WHERE p.id > COALESCE(s.last_posting_id, 0) AND p.occurred_at <= $2), 0) AS balance
+                  COALESCE(s.balance, 0) + COALESCE(sum(p.amount) FILTER (WHERE p.id > COALESCE(s.last_posting_id, 0) AND p.occurred_at <= $2::timestamptz), 0) AS balance
            FROM accounts a
            LEFT JOIN postings p ON p.account_id = a.id AND p.user_id = a.user_id
            LEFT JOIN snap s ON s.account_id = a.id AND s.currency = p.currency

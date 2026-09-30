@@ -59,7 +59,7 @@ async def test_pair_detection_and_rls(database) -> None:  # type: ignore[no-unty
         await accounts.create_account(conn, a["id"], name="Ally", type="bank", currency="USD")
         t1 = await ledger.build_simple(conn, a["id"], units, "en", "UTC", {"account": "Chase", "amount": -50000, "occurred_at": "2026-10-02"})
         r1 = await ledger.write_transaction(conn, a["id"], t1)
-        assert r1["tag"]["tag_key"] == "untagged"
+        assert {p["tag_key"] for p in r1["postings"] if p["tag_key"]} == {"untagged"}
         t2 = await ledger.build_simple(conn, a["id"], units, "en", "UTC", {"account": "Ally", "amount": 50000, "occurred_at": "2026-10-03"})
         r2 = await ledger.write_transaction(conn, a["id"], t2)
         assert r2["pair_id"] is not None
