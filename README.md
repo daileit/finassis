@@ -11,7 +11,7 @@ A ledger-first personal-finance **backend** built to be the financial memory an 
 
 ## Layout
 
-- `api/` — Python backend: FastAPI (REST, MCP server, Telegram channel), worker, migrations
+- `api/` — Python backend: FastAPI (REST, MCP server, Telegram channel), worker, migrations; `api/db/schema.sql` is the full DDL
 - `console/` — Next.js console, separate app with its own Dockerfile, built on the public API
 - `connectors/` — n8n templates and scripts that feed `POST /raw`
 - `seeds/` — reference data as JSON (system tags, units) with schemas; loaded idempotently at startup

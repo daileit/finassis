@@ -1,0 +1,36 @@
+# Local development stack. `make db-up` starts Postgres + Redis; api/console/grafana are added as they exist.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: finassis
+      POSTGRES_PASSWORD: finassis
+      POSTGRES_DB: finassis
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - timezone=UTC
+      - -c
+      - jit=off
+      - -c
+      - log_min_duration_statement=500ms
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finassis -d finassis"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:
