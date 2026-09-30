@@ -24,7 +24,7 @@ async def create_user(
     assert row is not None
     user = dict(row)
     await conn.execute(
-        "INSERT INTO user_plans(user_id, plan_id) SELECT $1, id FROM plans WHERE is_default LIMIT 1", user["id"]
+        "INSERT INTO user_plans(user_id, plan_id) SELECT $1::uuid, id FROM plans WHERE is_default LIMIT 1", user["id"]
     )
     await ensure_default_tag_prefs(conn, user["id"])
     return user

@@ -23,7 +23,7 @@ async def reclose_dirty(db: Database, limit: int = 500) -> dict[str, Any]:
             )
             await conn.execute(
                 f"""INSERT INTO period_rollups(user_id, period_kind, period_start, account_id, tag_id, currency, debit, credit, net, posting_count, closed_at)
-                    SELECT p.user_id, $2, $3, COALESCE(p.account_id, $4::uuid), COALESCE(p.tag_id, $4::uuid), p.currency,
+                    SELECT p.user_id, $2::text, $3::date, COALESCE(p.account_id, $4::uuid), COALESCE(p.tag_id, $4::uuid), p.currency,
                            sum(CASE WHEN p.amount < 0 THEN -p.amount ELSE 0 END), sum(CASE WHEN p.amount > 0 THEN p.amount ELSE 0 END),
                            sum(p.amount), count(*), now()
                     FROM postings p JOIN transactions t ON t.id = p.transaction_id

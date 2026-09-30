@@ -18,7 +18,7 @@ async def ensure_default_tag_prefs(conn: Conn, user_id: uuid.UUID) -> None:
     """Hide system children whose default is 'off' or 'sys' for a new user."""
     await conn.execute(
         """INSERT INTO tag_prefs(user_id, tag_id, is_hidden)
-           SELECT $1, id, true FROM tags WHERE NOT is_custom AND default_state IN ('off','sys')
+           SELECT $1::uuid, id, true FROM tags WHERE NOT is_custom AND default_state IN ('off','sys')
            ON CONFLICT DO NOTHING""",
         user_id,
     )

@@ -226,7 +226,7 @@ CREATE TABLE grants (
   expires_at  timestamptz,
   created_at  timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX grants_user_id_idx ON grants(user_id) WHERE expires_at IS NULL OR expires_at > now();
+CREATE INDEX grants_user_id_idx ON grants(user_id, expires_at);  -- now() is not allowed in a partial-index predicate
 
 -- -----------------------------------------------------------------------------
 -- 6. Ledger: accounts, tags, merchants, transactions, postings
