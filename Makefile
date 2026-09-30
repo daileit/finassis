@@ -1,4 +1,4 @@
-.PHONY: help i18n i18n-check seeds-check check docs-push db-up db-down db-check db-parse
+.PHONY: help i18n i18n-check seeds-check check docs-push db-up db-down db-check db-parse api-install api-test api-lint api-run up down logs
 
 PSQL_URL ?= postgresql://finassis:finassis@localhost:5432/finassis
 DB_SCRATCH ?= finassis_schema_check
@@ -18,6 +18,41 @@ help:
 	@echo "make db-down      stop them"
 	@echo "make db-parse     syntax-check api/db/schema.sql with the Postgres parser (no server needed)"
 	@echo "make db-check     apply schema.sql to a scratch database and run api/db/smoke.sql (needs db-up)"
+	@echo "make api-install  create api/.venv with uv and install the package + dev deps"
+	@echo "make api-test     unit tests (no database)"
+	@echo "make api-itest    integration tests against FINASSIS_DATABASE_URL (needs db-up)"
+	@echo "make api-lint     ruff + mypy"
+	@echo "make api-run      run the API locally (migrate → seed → bootstrap → serve)"
+	@echo "make up / down    full stack via docker compose (postgres, redis, api, worker)"
+
+API_PY ?= api/.venv/bin/python
+
+api-install:
+	cd api && uv venv .venv && uv pip install --python .venv/bin/python -e '.[dev]'
+
+api-test:
+	cd api && .venv/bin/python -m pytest tests/unit -q
+
+api-itest:
+	cd api && FINASSIS_DATABASE_URL=$(PSQL_URL) .venv/bin/python -m pytest tests/integration -q -m integration
+
+api-lint:
+	cd api && .venv/bin/ruff check src tests && .venv/bin/mypy src || true
+
+api-run:
+	cd api && FINASSIS_ENV=dev .venv/bin/finassis api
+
+up:
+	@test -f .env || cp .env.example .env
+	docker compose up --build -d
+	@echo "api: http://localhost:8000/api/v1/docs · metrics: http://localhost:8000/metrics"
+	@echo "bootstrap admin key: docker compose logs api | grep BOOTSTRAP"
+
+down:
+	docker compose down
+
+logs:
+	docker compose logs -f api worker
 
 db-up:
 	docker compose up -d postgres redis

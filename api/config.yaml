@@ -1,0 +1,14 @@
+# Behaviour configuration (non-secret). Env vars FINASSIS_* hold secrets and deployment values.
+raw_text_max_bytes: 32768
+interaction_default_ttl_days: 14
+pair_detection_window_days: 2
+rollup_reclose_interval_s: 3600
+snapshot_hour_utc: 19
+partitions_months_ahead: 3
+metered_kinds: ["raw.item", "compiler.call", "tag.custom"]
+free_plan_limits:
+  api.request: { month: 20000 }
+  raw.item: { month: 2000 }
+  compiler.call: { month: 10 }
+  tag.custom: { cap: 50 }
+  mcp.call: { month: 5000 }

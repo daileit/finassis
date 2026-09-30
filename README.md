@@ -9,6 +9,16 @@ A ledger-first personal-finance **backend** built to be the financial memory an 
 - Everything exposed as **REST + MCP** with provenance, staleness and annotations so the user's own AI reasons with good numbers.
 - Every costly action **metered** against a per-user allowance; console comes later as a separate app on the same public API.
 
+## Quick start
+
+```bash
+make up                                  # postgres, redis, api, worker
+docker compose logs api | grep BOOTSTRAP # the admin API key, printed once
+open http://localhost:8000/api/v1/docs
+```
+
+See [`api/README.md`](api/README.md) for the first API calls (create a user, mint a key, post an expense and a self-transfer, read balances and spend).
+
 ## Layout
 
 - `api/` — Python backend: FastAPI (REST, MCP server, Telegram channel), worker, migrations; `api/db/schema.sql` is the full DDL
@@ -21,5 +31,5 @@ A ledger-first personal-finance **backend** built to be the financial memory an 
 
 ## Stack
 
-API: Python 3.12 · FastAPI · PostgreSQL 16 (+ pgvector, pg_trgm) · Redis 7 · Prometheus/Grafana
+API: Python 3.12 · FastAPI · PostgreSQL 16 (+ pgvector, pg_trgm) · Redis 7 · Prometheus-format `/metrics`
 Console: Next.js · TypeScript · Tailwind + shadcn/ui · generated OpenAPI client

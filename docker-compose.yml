@@ -1,4 +1,6 @@
-# Local development stack. `make db-up` starts Postgres + Redis; api/console/grafana are added as they exist.
+# Full stack. Local dev builds the image: `docker compose up --build` (or `make up`).
+# Deploy pulls the CI-built image instead: `FINASSIS_IMAGE=lanhlungbang/finassis:<tag> docker compose up -d --no-build`
+# (image tags follow .github/workflows/ci-cd.yml: latest on main, <branch>, <sha>, vX.Y.Z on release tags).
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -31,6 +33,41 @@ services:
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     ports:
       - "6379:6379"
+
+  api:
+    image: ${FINASSIS_IMAGE:-lanhlungbang/finassis:latest}
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    command: ["api"]
+    env_file: [.env]
+    environment:
+      FINASSIS_DATABASE_URL: postgresql://finassis:finassis@postgres:5432/finassis
+      FINASSIS_REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  worker:
+    image: ${FINASSIS_IMAGE:-lanhlungbang/finassis:latest}
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    command: ["worker"]
+    env_file: [.env]
+    environment:
+      FINASSIS_DATABASE_URL: postgresql://finassis:finassis@postgres:5432/finassis
+      FINASSIS_REDIS_URL: redis://redis:6379/0
+    depends_on:
+      api:
+        condition: service_healthy
+
+# Observability: the API exposes Prometheus metrics at /metrics. Prometheus + Grafana are not part of the
+# stack yet; docs/tech/06-operations.md §"Metrics" has the compose snippet to add when needed.
 
 volumes:
   pgdata:

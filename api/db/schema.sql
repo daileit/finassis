@@ -827,7 +827,7 @@ CREATE TABLE admin_audit (
 -- -----------------------------------------------------------------------------
 -- 15. Integrity triggers
 -- -----------------------------------------------------------------------------
--- postings are immutable for the app role
+-- postings: values are immutable for the app role; classification (tag_id, tag_source, tag_confidence) may change
 CREATE OR REPLACE FUNCTION postings_immutable() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -836,7 +836,16 @@ BEGIN
      OR (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) THEN
     IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
   END IF;
-  RAISE EXCEPTION 'postings are append-only; record a reversal instead' USING ERRCODE = 'integrity_constraint_violation';
+  IF TG_OP = 'UPDATE'
+     AND NEW.id = OLD.id AND NEW.user_id = OLD.user_id AND NEW.transaction_id = OLD.transaction_id
+     AND NEW.account_id IS NOT DISTINCT FROM OLD.account_id
+     AND NEW.amount = OLD.amount AND NEW.currency = OLD.currency
+     AND NEW.quantity IS NOT DISTINCT FROM OLD.quantity AND NEW.unit IS NOT DISTINCT FROM OLD.unit
+     AND NEW.instrument_id IS NOT DISTINCT FROM OLD.instrument_id
+     AND NEW.occurred_at = OLD.occurred_at AND NEW.created_at = OLD.created_at THEN
+    RETURN NEW;   -- only tag columns changed: allowed (re-tagging is classification, not a value change)
+  END IF;
+  RAISE EXCEPTION 'posting values are append-only; record a reversal instead' USING ERRCODE = 'integrity_constraint_violation';
 END $$;
 CREATE TRIGGER postings_immutable_trg BEFORE UPDATE OR DELETE ON postings
   FOR EACH ROW EXECUTE FUNCTION postings_immutable();

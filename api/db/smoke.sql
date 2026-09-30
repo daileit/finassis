@@ -67,10 +67,14 @@ END $$;
 -- 5. postings are immutable for the app role
 DO $$ BEGIN
   BEGIN
-    UPDATE postings SET amount = 1 WHERE transaction_id = 'c0ffee00-0000-0000-0000-000000000001';
+    UPDATE postings SET amount = amount + 1 WHERE transaction_id = 'c0ffee00-0000-0000-0000-000000000001';
     RAISE EXCEPTION 'expected failure did not happen: posting updated';
   EXCEPTION WHEN integrity_constraint_violation THEN NULL; END;
 END $$;
+
+-- 5b. but re-tagging a leg is allowed for the app role
+UPDATE postings SET tag_id = '11111111-1111-1111-1111-111111111111', tag_source = 'caller', tag_confidence = 'exact'
+ WHERE transaction_id = 'c0ffee00-0000-0000-0000-000000000001' AND account_id IS NULL;
 
 -- 6. dirty_periods marked
 DO $$ DECLARE n int; BEGIN
