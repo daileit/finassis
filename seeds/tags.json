@@ -1,0 +1,1701 @@
+{
+  "$schema": "./schemas/tags.schema.json",
+  "version": 1,
+  "notes": "System tag tree. Source of truth for the seed loader and for tag.* i18n entries. Roots are fixed; children are system tags; users add custom children under a root. default: on=active for new users, off=available, sys=system-only. Keywords feed the keyword dictionary and the tag-name embedding index; Vietnamese keywords are tone-mark-free.",
+  "roots": [
+    {
+      "key": "food",
+      "kind": "expense",
+      "names": {
+        "en": "Food & drink",
+        "vi": "Ăn uống"
+      },
+      "children": [
+        {
+          "key": "groceries",
+          "names": {
+            "en": "Groceries",
+            "vi": "Đi chợ / siêu thị"
+          },
+          "default": "on",
+          "keywords": [
+            "winmart",
+            "coopmart",
+            "bach hoa xanh",
+            "bhx",
+            "lotte mart",
+            "go!",
+            "big c",
+            "aeon",
+            "mega market",
+            "cho",
+            "sieu thi",
+            "grocery"
+          ]
+        },
+        {
+          "key": "dining",
+          "names": {
+            "en": "Dining out",
+            "vi": "Ăn ngoài"
+          },
+          "default": "on",
+          "keywords": [
+            "nha hang",
+            "quan",
+            "restaurant",
+            "pho",
+            "bun",
+            "com",
+            "lau",
+            "nuong",
+            "buffet",
+            "pizza",
+            "kfc",
+            "lotteria",
+            "jollibee"
+          ]
+        },
+        {
+          "key": "coffee_drinks",
+          "names": {
+            "en": "Coffee & drinks",
+            "vi": "Cà phê / trà sữa"
+          },
+          "default": "on",
+          "keywords": [
+            "highlands",
+            "phuc long",
+            "the coffee house",
+            "starbucks",
+            "katinat",
+            "gong cha",
+            "koi",
+            "tra sua",
+            "ca phe",
+            "cafe",
+            "milk tea"
+          ]
+        },
+        {
+          "key": "delivery",
+          "names": {
+            "en": "Food delivery",
+            "vi": "Giao đồ ăn"
+          },
+          "default": "on",
+          "keywords": [
+            "grabfood",
+            "shopeefood",
+            "befood",
+            "baemin",
+            "ship do an"
+          ]
+        },
+        {
+          "key": "snacks",
+          "names": {
+            "en": "Snacks & convenience",
+            "vi": "Ăn vặt / tiện lợi"
+          },
+          "default": "on",
+          "keywords": [
+            "circle k",
+            "gs25",
+            "family mart",
+            "7-eleven",
+            "ministop",
+            "an vat"
+          ]
+        },
+        {
+          "key": "alcohol_tobacco",
+          "names": {
+            "en": "Alcohol & tobacco",
+            "vi": "Rượu bia / thuốc lá"
+          },
+          "default": "off",
+          "keywords": [
+            "bia",
+            "ruou",
+            "thuoc la",
+            "beer",
+            "wine"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "housing",
+      "kind": "expense",
+      "names": {
+        "en": "Housing",
+        "vi": "Nhà ở"
+      },
+      "children": [
+        {
+          "key": "rent",
+          "names": {
+            "en": "Rent",
+            "vi": "Tiền thuê nhà"
+          },
+          "default": "on",
+          "keywords": [
+            "tien nha",
+            "thue nha",
+            "rent"
+          ]
+        },
+        {
+          "key": "mortgage",
+          "names": {
+            "en": "Mortgage payment",
+            "vi": "Trả góp nhà"
+          },
+          "default": "off",
+          "keywords": [
+            "tra gop nha",
+            "mortgage"
+          ],
+          "note": "use `transfer.loan_principal` + `financial.loan_interest` if the loan is tracked as a liability account"
+        },
+        {
+          "key": "electricity",
+          "names": {
+            "en": "Electricity",
+            "vi": "Điện"
+          },
+          "default": "on",
+          "keywords": [
+            "evn",
+            "dien luc",
+            "tien dien"
+          ]
+        },
+        {
+          "key": "water",
+          "names": {
+            "en": "Water",
+            "vi": "Nước"
+          },
+          "default": "on",
+          "keywords": [
+            "cap nuoc",
+            "sawaco",
+            "tien nuoc"
+          ]
+        },
+        {
+          "key": "internet_tv",
+          "names": {
+            "en": "Internet & TV",
+            "vi": "Internet / truyền hình"
+          },
+          "default": "on",
+          "keywords": [
+            "fpt telecom",
+            "viettel internet",
+            "vnpt",
+            "k+",
+            "fpt play",
+            "wifi"
+          ]
+        },
+        {
+          "key": "building_fees",
+          "names": {
+            "en": "Building & management fees",
+            "vi": "Phí quản lý chung cư"
+          },
+          "default": "on",
+          "keywords": [
+            "phi quan ly",
+            "phi chung cu",
+            "phi dich vu",
+            "phi gui xe chung cu"
+          ]
+        },
+        {
+          "key": "maintenance",
+          "names": {
+            "en": "Repairs & maintenance",
+            "vi": "Sửa chữa nhà"
+          },
+          "default": "on",
+          "keywords": [
+            "sua nha",
+            "sua chua",
+            "tho",
+            "dien nuoc"
+          ]
+        },
+        {
+          "key": "furnishing",
+          "names": {
+            "en": "Furniture & appliances",
+            "vi": "Nội thất / thiết bị"
+          },
+          "default": "on",
+          "keywords": [
+            "noi that",
+            "ikea",
+            "jysk",
+            "baya",
+            "nha xinh",
+            "may lanh",
+            "tu lanh",
+            "may giat"
+          ]
+        },
+        {
+          "key": "home_services",
+          "names": {
+            "en": "Cleaning & home help",
+            "vi": "Giúp việc / dọn nhà"
+          },
+          "default": "off",
+          "keywords": [
+            "btaskee",
+            "giup viec",
+            "don nha"
+          ]
+        },
+        {
+          "key": "home_insurance",
+          "names": {
+            "en": "Home insurance",
+            "vi": "Bảo hiểm nhà"
+          },
+          "default": "off",
+          "keywords": [
+            "bao hiem nha"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "transport",
+      "kind": "expense",
+      "names": {
+        "en": "Transport",
+        "vi": "Đi lại"
+      },
+      "children": [
+        {
+          "key": "fuel",
+          "names": {
+            "en": "Fuel",
+            "vi": "Xăng dầu"
+          },
+          "default": "on",
+          "keywords": [
+            "petrolimex",
+            "pvoil",
+            "xang",
+            "do xang",
+            "tram xang"
+          ]
+        },
+        {
+          "key": "ride_hailing",
+          "names": {
+            "en": "Ride-hailing",
+            "vi": "Xe công nghệ"
+          },
+          "default": "on",
+          "keywords": [
+            "grab",
+            "grabbike",
+            "grabcar",
+            "be",
+            "xanh sm",
+            "gojek",
+            "taxi",
+            "mai linh",
+            "vinasun"
+          ]
+        },
+        {
+          "key": "public_transit",
+          "names": {
+            "en": "Public transport",
+            "vi": "Xe buýt / metro"
+          },
+          "default": "on",
+          "keywords": [
+            "xe buyt",
+            "metro",
+            "bus"
+          ]
+        },
+        {
+          "key": "parking_tolls",
+          "names": {
+            "en": "Parking & tolls",
+            "vi": "Gửi xe / phí đường"
+          },
+          "default": "on",
+          "keywords": [
+            "gui xe",
+            "bai xe",
+            "vetc",
+            "epass",
+            "phi cau duong",
+            "toll"
+          ]
+        },
+        {
+          "key": "vehicle_maintenance",
+          "names": {
+            "en": "Vehicle maintenance",
+            "vi": "Bảo dưỡng / sửa xe"
+          },
+          "default": "on",
+          "keywords": [
+            "bao duong",
+            "sua xe",
+            "thay nhot",
+            "rua xe",
+            "vo xe"
+          ]
+        },
+        {
+          "key": "vehicle_fees",
+          "names": {
+            "en": "Registration & vehicle insurance",
+            "vi": "Đăng kiểm / bảo hiểm xe"
+          },
+          "default": "on",
+          "keywords": [
+            "dang kiem",
+            "bao hiem xe",
+            "phi duong bo"
+          ]
+        },
+        {
+          "key": "ev_charging",
+          "names": {
+            "en": "EV charging",
+            "vi": "Sạc xe điện"
+          },
+          "default": "off",
+          "keywords": [
+            "vinfast",
+            "sac xe",
+            "tram sac"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "shopping",
+      "kind": "expense",
+      "names": {
+        "en": "Shopping",
+        "vi": "Mua sắm"
+      },
+      "children": [
+        {
+          "key": "clothing",
+          "names": {
+            "en": "Clothing & shoes",
+            "vi": "Quần áo / giày dép"
+          },
+          "default": "on",
+          "keywords": [
+            "uniqlo",
+            "zara",
+            "h&m",
+            "canifa",
+            "adidas",
+            "nike",
+            "quan ao",
+            "giay"
+          ]
+        },
+        {
+          "key": "electronics",
+          "names": {
+            "en": "Electronics",
+            "vi": "Điện tử / công nghệ"
+          },
+          "default": "on",
+          "keywords": [
+            "the gioi di dong",
+            "fpt shop",
+            "cellphones",
+            "dien may xanh",
+            "apple",
+            "samsung"
+          ]
+        },
+        {
+          "key": "household",
+          "names": {
+            "en": "Household goods",
+            "vi": "Đồ dùng gia đình"
+          },
+          "default": "on",
+          "keywords": [
+            "do gia dung",
+            "nuoc giat",
+            "giay ve sinh",
+            "daiso",
+            "miniso"
+          ]
+        },
+        {
+          "key": "online_marketplace",
+          "names": {
+            "en": "Online marketplace",
+            "vi": "Sàn thương mại điện tử"
+          },
+          "default": "on",
+          "keywords": [
+            "shopee",
+            "lazada",
+            "tiki",
+            "tiktok shop",
+            "sendo"
+          ]
+        },
+        {
+          "key": "beauty",
+          "names": {
+            "en": "Beauty & cosmetics",
+            "vi": "Mỹ phẩm / làm đẹp"
+          },
+          "default": "on",
+          "keywords": [
+            "guardian",
+            "watsons",
+            "hasaki",
+            "my pham",
+            "son"
+          ]
+        },
+        {
+          "key": "books_stationery",
+          "names": {
+            "en": "Books & stationery",
+            "vi": "Sách / văn phòng phẩm"
+          },
+          "default": "off",
+          "keywords": [
+            "fahasa",
+            "tiki sach",
+            "sach",
+            "van phong pham"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "health",
+      "kind": "expense",
+      "names": {
+        "en": "Health",
+        "vi": "Sức khỏe"
+      },
+      "children": [
+        {
+          "key": "medical",
+          "names": {
+            "en": "Doctor & hospital",
+            "vi": "Khám chữa bệnh"
+          },
+          "default": "on",
+          "keywords": [
+            "benh vien",
+            "phong kham",
+            "vinmec",
+            "medlatec",
+            "kham benh",
+            "bac si"
+          ]
+        },
+        {
+          "key": "pharmacy",
+          "names": {
+            "en": "Pharmacy",
+            "vi": "Thuốc"
+          },
+          "default": "on",
+          "keywords": [
+            "pharmacity",
+            "long chau",
+            "an khang",
+            "nha thuoc",
+            "thuoc"
+          ]
+        },
+        {
+          "key": "dental_optical",
+          "names": {
+            "en": "Dental & optical",
+            "vi": "Nha khoa / mắt kính"
+          },
+          "default": "on",
+          "keywords": [
+            "nha khoa",
+            "rang",
+            "mat kinh",
+            "kinh"
+          ]
+        },
+        {
+          "key": "health_insurance",
+          "names": {
+            "en": "Health insurance",
+            "vi": "Bảo hiểm y tế / sức khỏe"
+          },
+          "default": "on",
+          "keywords": [
+            "bhyt",
+            "bao hiem suc khoe",
+            "bao viet",
+            "pvi"
+          ]
+        },
+        {
+          "key": "fitness",
+          "names": {
+            "en": "Fitness & sport",
+            "vi": "Gym / thể thao"
+          },
+          "default": "on",
+          "keywords": [
+            "california fitness",
+            "elite",
+            "citigym",
+            "gym",
+            "yoga",
+            "bong da",
+            "san"
+          ]
+        },
+        {
+          "key": "wellness",
+          "names": {
+            "en": "Spa, massage & wellness",
+            "vi": "Spa / massage"
+          },
+          "default": "off",
+          "keywords": [
+            "spa",
+            "massage",
+            "xong hoi"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "family",
+      "kind": "expense",
+      "names": {
+        "en": "Family",
+        "vi": "Gia đình"
+      },
+      "children": [
+        {
+          "key": "children",
+          "names": {
+            "en": "Children's needs",
+            "vi": "Đồ dùng cho con"
+          },
+          "default": "on",
+          "keywords": [
+            "con cung",
+            "bibo mart",
+            "kids plaza",
+            "sua",
+            "bim",
+            "ta"
+          ]
+        },
+        {
+          "key": "kids_education",
+          "names": {
+            "en": "Children's education",
+            "vi": "Học phí / học thêm cho con"
+          },
+          "default": "on",
+          "keywords": [
+            "hoc phi",
+            "truong",
+            "hoc them",
+            "tieng anh cho con"
+          ]
+        },
+        {
+          "key": "childcare",
+          "names": {
+            "en": "Childcare",
+            "vi": "Trông trẻ"
+          },
+          "default": "off",
+          "keywords": [
+            "trong tre",
+            "bao mau",
+            "nha tre"
+          ]
+        },
+        {
+          "key": "parents_support",
+          "names": {
+            "en": "Supporting parents & relatives",
+            "vi": "Biếu cha mẹ / gia đình"
+          },
+          "default": "on",
+          "keywords": [
+            "bieu ba",
+            "bieu me",
+            "gui ve que",
+            "cho me"
+          ]
+        },
+        {
+          "key": "pets",
+          "names": {
+            "en": "Pets",
+            "vi": "Thú cưng"
+          },
+          "default": "off",
+          "keywords": [
+            "thu cung",
+            "pet",
+            "thuc an cho",
+            "cat",
+            "thu y"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "personal",
+      "kind": "expense",
+      "names": {
+        "en": "Personal",
+        "vi": "Cá nhân"
+      },
+      "children": [
+        {
+          "key": "self_education",
+          "names": {
+            "en": "Courses & learning",
+            "vi": "Học tập / khóa học"
+          },
+          "default": "on",
+          "keywords": [
+            "udemy",
+            "coursera",
+            "khoa hoc",
+            "ielts",
+            "tieng anh",
+            "hoc phi"
+          ]
+        },
+        {
+          "key": "subscriptions",
+          "names": {
+            "en": "Subscriptions",
+            "vi": "Dịch vụ đăng ký"
+          },
+          "default": "on",
+          "keywords": [
+            "netflix",
+            "spotify",
+            "youtube premium",
+            "icloud",
+            "google one",
+            "chatgpt",
+            "apple.com/bill"
+          ]
+        },
+        {
+          "key": "mobile_phone",
+          "names": {
+            "en": "Mobile & data",
+            "vi": "Điện thoại / data"
+          },
+          "default": "on",
+          "keywords": [
+            "viettel",
+            "mobifone",
+            "vinaphone",
+            "nap tien",
+            "the cao",
+            "4g"
+          ]
+        },
+        {
+          "key": "personal_care",
+          "names": {
+            "en": "Haircut & personal care",
+            "vi": "Cắt tóc / chăm sóc"
+          },
+          "default": "on",
+          "keywords": [
+            "30shine",
+            "cat toc",
+            "salon",
+            "nail"
+          ]
+        },
+        {
+          "key": "hobbies",
+          "names": {
+            "en": "Hobbies",
+            "vi": "Sở thích"
+          },
+          "default": "on",
+          "keywords": [
+            "game",
+            "steam",
+            "may anh",
+            "cau ca",
+            "nhac cu"
+          ]
+        },
+        {
+          "key": "books_media",
+          "names": {
+            "en": "Books & media",
+            "vi": "Sách / báo / phim mua"
+          },
+          "default": "off",
+          "keywords": [
+            "kindle",
+            "sach",
+            "bao"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "social",
+      "kind": "expense",
+      "names": {
+        "en": "Social & giving",
+        "vi": "Xã hội & lễ nghĩa"
+      },
+      "children": [
+        {
+          "key": "entertainment",
+          "names": {
+            "en": "Entertainment",
+            "vi": "Giải trí"
+          },
+          "default": "on",
+          "keywords": [
+            "cgv",
+            "lotte cinema",
+            "galaxy",
+            "bhd",
+            "karaoke",
+            "bar",
+            "club",
+            "ve xem"
+          ]
+        },
+        {
+          "key": "gifts_given",
+          "names": {
+            "en": "Gifts",
+            "vi": "Quà tặng"
+          },
+          "default": "on",
+          "keywords": [
+            "qua",
+            "tang",
+            "sinh nhat",
+            "gift"
+          ]
+        },
+        {
+          "key": "weddings_funerals",
+          "names": {
+            "en": "Weddings, funerals & visits",
+            "vi": "Đám cưới / đám giỗ / thăm hỏi"
+          },
+          "default": "on",
+          "keywords": [
+            "dam cuoi",
+            "mung cuoi",
+            "dam gio",
+            "phung dieu",
+            "tham benh"
+          ]
+        },
+        {
+          "key": "lucky_money_given",
+          "names": {
+            "en": "Lucky money given",
+            "vi": "Lì xì / mừng tuổi"
+          },
+          "default": "on",
+          "keywords": [
+            "li xi",
+            "mung tuoi",
+            "tet"
+          ],
+          "region": "VN"
+        },
+        {
+          "key": "charity",
+          "names": {
+            "en": "Charity & temple",
+            "vi": "Từ thiện / công đức"
+          },
+          "default": "on",
+          "keywords": [
+            "tu thien",
+            "cong duc",
+            "quyen gop",
+            "chua",
+            "donate"
+          ]
+        },
+        {
+          "key": "memberships",
+          "names": {
+            "en": "Clubs & memberships",
+            "vi": "Hội phí / câu lạc bộ"
+          },
+          "default": "off",
+          "keywords": [
+            "hoi phi",
+            "clb",
+            "membership"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "travel",
+      "kind": "expense",
+      "names": {
+        "en": "Travel",
+        "vi": "Du lịch"
+      },
+      "children": [
+        {
+          "key": "flights",
+          "names": {
+            "en": "Flights",
+            "vi": "Vé máy bay"
+          },
+          "default": "on",
+          "keywords": [
+            "vietnam airlines",
+            "vietjet",
+            "bamboo",
+            "traveloka",
+            "ve may bay"
+          ]
+        },
+        {
+          "key": "trains_buses",
+          "names": {
+            "en": "Trains & long-distance buses",
+            "vi": "Vé tàu / xe khách"
+          },
+          "default": "off",
+          "keywords": [
+            "ve tau",
+            "xe khach",
+            "futa",
+            "phuong trang"
+          ]
+        },
+        {
+          "key": "lodging",
+          "names": {
+            "en": "Hotels & stays",
+            "vi": "Khách sạn / homestay"
+          },
+          "default": "on",
+          "keywords": [
+            "agoda",
+            "booking",
+            "airbnb",
+            "khach san",
+            "homestay",
+            "resort"
+          ]
+        },
+        {
+          "key": "tours_activities",
+          "names": {
+            "en": "Tours & activities",
+            "vi": "Tour / vé tham quan"
+          },
+          "default": "on",
+          "keywords": [
+            "klook",
+            "tour",
+            "ve tham quan",
+            "vinwonders"
+          ]
+        },
+        {
+          "key": "travel_insurance_visa",
+          "names": {
+            "en": "Visa & travel insurance",
+            "vi": "Visa / bảo hiểm du lịch"
+          },
+          "default": "off",
+          "keywords": [
+            "visa",
+            "bao hiem du lich"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "financial",
+      "kind": "expense",
+      "names": {
+        "en": "Financial",
+        "vi": "Tài chính"
+      },
+      "children": [
+        {
+          "key": "bank_fees",
+          "names": {
+            "en": "Bank fees",
+            "vi": "Phí ngân hàng"
+          },
+          "default": "on",
+          "keywords": [
+            "phi thuong nien",
+            "phi sms",
+            "phi chuyen tien",
+            "phi rut",
+            "phi quan ly tai khoan"
+          ]
+        },
+        {
+          "key": "loan_interest",
+          "names": {
+            "en": "Loan interest",
+            "vi": "Lãi vay"
+          },
+          "default": "on",
+          "keywords": [
+            "lai vay",
+            "tra lai",
+            "interest"
+          ]
+        },
+        {
+          "key": "credit_card_interest",
+          "names": {
+            "en": "Credit card interest & fees",
+            "vi": "Lãi / phí thẻ tín dụng"
+          },
+          "default": "on",
+          "keywords": [
+            "lai the",
+            "phi tra cham",
+            "phi vuot han muc"
+          ]
+        },
+        {
+          "key": "investment_fees",
+          "names": {
+            "en": "Investment fees",
+            "vi": "Phí giao dịch / quản lý đầu tư"
+          },
+          "default": "on",
+          "keywords": [
+            "phi giao dich",
+            "phi luu ky",
+            "phi quan ly"
+          ]
+        },
+        {
+          "key": "life_insurance",
+          "names": {
+            "en": "Life insurance",
+            "vi": "Bảo hiểm nhân thọ"
+          },
+          "default": "on",
+          "keywords": [
+            "prudential",
+            "manulife",
+            "dai-ichi",
+            "aia",
+            "bao viet nhan tho",
+            "bao hiem nhan tho"
+          ]
+        },
+        {
+          "key": "taxes",
+          "names": {
+            "en": "Taxes",
+            "vi": "Thuế"
+          },
+          "default": "on",
+          "keywords": [
+            "thue tncn",
+            "thue",
+            "tax"
+          ]
+        },
+        {
+          "key": "fines_penalties",
+          "names": {
+            "en": "Fines & penalties",
+            "vi": "Phạt"
+          },
+          "default": "off",
+          "keywords": [
+            "phat nguoi",
+            "phat",
+            "penalty"
+          ]
+        },
+        {
+          "key": "fx_loss",
+          "names": {
+            "en": "FX loss",
+            "vi": "Lỗ tỷ giá"
+          },
+          "default": "sys",
+          "keywords": []
+        }
+      ]
+    },
+    {
+      "key": "work",
+      "kind": "expense",
+      "names": {
+        "en": "Work & business",
+        "vi": "Công việc"
+      },
+      "children": [
+        {
+          "key": "work_expenses",
+          "names": {
+            "en": "Work expenses",
+            "vi": "Chi phí công việc"
+          },
+          "default": "on",
+          "keywords": [
+            "cong tac",
+            "tiep khach",
+            "van phong"
+          ]
+        },
+        {
+          "key": "tools_software",
+          "names": {
+            "en": "Tools & software",
+            "vi": "Công cụ / phần mềm"
+          },
+          "default": "on",
+          "keywords": [
+            "github",
+            "aws",
+            "google workspace",
+            "notion",
+            "figma",
+            "domain",
+            "hosting"
+          ]
+        },
+        {
+          "key": "freelance_costs",
+          "names": {
+            "en": "Freelance costs",
+            "vi": "Chi phí freelance"
+          },
+          "default": "off",
+          "keywords": [
+            "thue ngoai",
+            "outsource"
+          ]
+        },
+        {
+          "key": "professional_fees",
+          "names": {
+            "en": "Certifications & professional fees",
+            "vi": "Chứng chỉ / hội phí nghề"
+          },
+          "default": "off",
+          "keywords": [
+            "chung chi",
+            "exam fee"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "misc",
+      "kind": "expense",
+      "names": {
+        "en": "Miscellaneous",
+        "vi": "Khác"
+      },
+      "children": []
+    },
+    {
+      "key": "untagged",
+      "kind": "expense",
+      "names": {
+        "en": "Untagged",
+        "vi": "Chưa gắn thẻ"
+      },
+      "children": []
+    },
+    {
+      "key": "salary",
+      "kind": "income",
+      "names": {
+        "en": "Salary & wages",
+        "vi": "Lương"
+      },
+      "children": [
+        {
+          "key": "salary_main",
+          "names": {
+            "en": "Salary",
+            "vi": "Lương"
+          },
+          "default": "on",
+          "keywords": [
+            "luong",
+            "salary",
+            "payroll",
+            "tra luong"
+          ]
+        },
+        {
+          "key": "bonus",
+          "names": {
+            "en": "Bonus & 13th month",
+            "vi": "Thưởng / lương tháng 13"
+          },
+          "default": "on",
+          "keywords": [
+            "thuong",
+            "luong thang 13",
+            "bonus",
+            "kpi"
+          ]
+        },
+        {
+          "key": "allowances",
+          "names": {
+            "en": "Allowances",
+            "vi": "Phụ cấp"
+          },
+          "default": "on",
+          "keywords": [
+            "phu cap",
+            "tro cap",
+            "an trua",
+            "xang xe"
+          ]
+        },
+        {
+          "key": "overtime",
+          "names": {
+            "en": "Overtime",
+            "vi": "Tăng ca"
+          },
+          "default": "off",
+          "keywords": [
+            "tang ca",
+            "ot"
+          ]
+        },
+        {
+          "key": "severance",
+          "names": {
+            "en": "Severance",
+            "vi": "Trợ cấp thôi việc"
+          },
+          "default": "off",
+          "keywords": [
+            "tro cap thoi viec"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "business_income",
+      "kind": "income",
+      "names": {
+        "en": "Business & freelance",
+        "vi": "Kinh doanh / tự do"
+      },
+      "children": [
+        {
+          "key": "freelance",
+          "names": {
+            "en": "Freelance & contracts",
+            "vi": "Freelance / hợp đồng"
+          },
+          "default": "on",
+          "keywords": [
+            "freelance",
+            "upwork",
+            "hop dong",
+            "du an"
+          ]
+        },
+        {
+          "key": "sales_revenue",
+          "names": {
+            "en": "Sales revenue",
+            "vi": "Doanh thu bán hàng"
+          },
+          "default": "on",
+          "keywords": [
+            "ban hang",
+            "doanh thu",
+            "shopee seller"
+          ]
+        },
+        {
+          "key": "commission",
+          "names": {
+            "en": "Commission & referrals",
+            "vi": "Hoa hồng / giới thiệu"
+          },
+          "default": "off",
+          "keywords": [
+            "hoa hong",
+            "referral",
+            "affiliate"
+          ]
+        },
+        {
+          "key": "tips",
+          "names": {
+            "en": "Tips",
+            "vi": "Tiền tip"
+          },
+          "default": "off",
+          "keywords": [
+            "tip"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "investment_income",
+      "kind": "income",
+      "names": {
+        "en": "Investment income",
+        "vi": "Thu nhập đầu tư"
+      },
+      "children": [
+        {
+          "key": "interest",
+          "names": {
+            "en": "Interest",
+            "vi": "Lãi tiết kiệm"
+          },
+          "default": "on",
+          "keywords": [
+            "lai tiet kiem",
+            "lai suat",
+            "tat toan",
+            "interest"
+          ]
+        },
+        {
+          "key": "dividends",
+          "names": {
+            "en": "Dividends",
+            "vi": "Cổ tức"
+          },
+          "default": "on",
+          "keywords": [
+            "co tuc",
+            "dividend"
+          ]
+        },
+        {
+          "key": "bond_coupons",
+          "names": {
+            "en": "Bond coupons",
+            "vi": "Lãi trái phiếu"
+          },
+          "default": "off",
+          "keywords": [
+            "trai phieu",
+            "coupon"
+          ]
+        },
+        {
+          "key": "rental",
+          "names": {
+            "en": "Rental income",
+            "vi": "Cho thuê"
+          },
+          "default": "on",
+          "keywords": [
+            "cho thue",
+            "tien thue nha thu",
+            "rent received"
+          ]
+        },
+        {
+          "key": "capital_gains",
+          "names": {
+            "en": "Realised gains",
+            "vi": "Lãi bán tài sản"
+          },
+          "default": "on",
+          "keywords": [
+            "lai ban",
+            "chot loi"
+          ],
+          "note": "created on `transfer.investment_sell` when proceeds exceed cost basis"
+        },
+        {
+          "key": "staking_yield",
+          "names": {
+            "en": "Crypto yield",
+            "vi": "Lãi staking / crypto"
+          },
+          "default": "off",
+          "keywords": [
+            "staking",
+            "yield",
+            "apy"
+          ]
+        },
+        {
+          "key": "fx_gain",
+          "names": {
+            "en": "FX gain",
+            "vi": "Lãi tỷ giá"
+          },
+          "default": "sys",
+          "keywords": []
+        }
+      ]
+    },
+    {
+      "key": "other_income",
+      "kind": "income",
+      "names": {
+        "en": "Other income",
+        "vi": "Thu nhập khác"
+      },
+      "children": [
+        {
+          "key": "gifts_received",
+          "names": {
+            "en": "Gifts received",
+            "vi": "Quà / tiền được cho"
+          },
+          "default": "on",
+          "keywords": [
+            "duoc cho",
+            "qua",
+            "gift"
+          ]
+        },
+        {
+          "key": "lucky_money_received",
+          "names": {
+            "en": "Lucky money received",
+            "vi": "Lì xì nhận"
+          },
+          "default": "on",
+          "keywords": [
+            "li xi",
+            "mung tuoi"
+          ],
+          "region": "VN"
+        },
+        {
+          "key": "refunds",
+          "names": {
+            "en": "Refunds",
+            "vi": "Hoàn tiền"
+          },
+          "default": "on",
+          "keywords": [
+            "hoan tien",
+            "refund",
+            "tra lai"
+          ]
+        },
+        {
+          "key": "cashback_rewards",
+          "names": {
+            "en": "Cashback & rewards",
+            "vi": "Cashback / điểm thưởng"
+          },
+          "default": "on",
+          "keywords": [
+            "cashback",
+            "hoan tien the",
+            "diem thuong",
+            "reward"
+          ]
+        },
+        {
+          "key": "government_benefits",
+          "names": {
+            "en": "Government benefits",
+            "vi": "Trợ cấp nhà nước"
+          },
+          "default": "off",
+          "keywords": [
+            "bhxh",
+            "tro cap",
+            "thai san"
+          ]
+        },
+        {
+          "key": "insurance_payout",
+          "names": {
+            "en": "Insurance payout",
+            "vi": "Bồi thường bảo hiểm"
+          },
+          "default": "off",
+          "keywords": [
+            "boi thuong",
+            "bao hiem chi tra"
+          ]
+        },
+        {
+          "key": "windfall",
+          "names": {
+            "en": "Lottery & windfalls",
+            "vi": "Trúng thưởng"
+          },
+          "default": "off",
+          "keywords": [
+            "trung thuong",
+            "vietlott",
+            "xo so"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "transfer",
+      "kind": "transfer",
+      "names": {
+        "en": "Transfers",
+        "vi": "Chuyển tiền"
+      },
+      "children": [
+        {
+          "key": "own_accounts",
+          "names": {
+            "en": "Between my accounts",
+            "vi": "Chuyển giữa tài khoản"
+          },
+          "default": "on",
+          "keywords": [
+            "chuyen khoan noi bo",
+            "chuyen tien cho chinh minh"
+          ]
+        },
+        {
+          "key": "cash_withdrawal",
+          "names": {
+            "en": "ATM / cash withdrawal",
+            "vi": "Rút tiền mặt"
+          },
+          "default": "on",
+          "keywords": [
+            "rut tien",
+            "atm",
+            "withdraw"
+          ]
+        },
+        {
+          "key": "cash_deposit",
+          "names": {
+            "en": "Cash deposit",
+            "vi": "Nộp tiền mặt"
+          },
+          "default": "on",
+          "keywords": [
+            "nop tien",
+            "deposit"
+          ]
+        },
+        {
+          "key": "ewallet_topup",
+          "names": {
+            "en": "E-wallet top-up",
+            "vi": "Nạp ví điện tử"
+          },
+          "default": "on",
+          "keywords": [
+            "momo",
+            "zalopay",
+            "viettel money",
+            "shopeepay",
+            "vnpay",
+            "nap vi"
+          ],
+          "region": "VN"
+        },
+        {
+          "key": "savings_deposit",
+          "names": {
+            "en": "Into savings / term deposit",
+            "vi": "Gửi tiết kiệm"
+          },
+          "default": "on",
+          "keywords": [
+            "gui tiet kiem",
+            "mo so tiet kiem",
+            "tiet kiem online"
+          ]
+        },
+        {
+          "key": "savings_withdrawal",
+          "names": {
+            "en": "Out of savings",
+            "vi": "Rút tiết kiệm / tất toán gốc"
+          },
+          "default": "on",
+          "keywords": [
+            "tat toan",
+            "rut tiet kiem"
+          ]
+        },
+        {
+          "key": "investment_buy",
+          "names": {
+            "en": "Buy investment",
+            "vi": "Mua tài sản đầu tư"
+          },
+          "default": "on",
+          "keywords": [
+            "mua co phieu",
+            "mua vang",
+            "mua chung chi quy",
+            "nap tien chung khoan",
+            "buy"
+          ]
+        },
+        {
+          "key": "investment_sell",
+          "names": {
+            "en": "Sell investment",
+            "vi": "Bán tài sản đầu tư"
+          },
+          "default": "on",
+          "keywords": [
+            "ban co phieu",
+            "ban vang",
+            "rut tien chung khoan",
+            "sell"
+          ]
+        },
+        {
+          "key": "loan_principal",
+          "names": {
+            "en": "Loan principal repayment",
+            "vi": "Trả nợ gốc"
+          },
+          "default": "on",
+          "keywords": [
+            "tra goc",
+            "tra no vay",
+            "tra gop"
+          ]
+        },
+        {
+          "key": "loan_drawdown",
+          "names": {
+            "en": "Loan received",
+            "vi": "Nhận tiền vay / giải ngân"
+          },
+          "default": "on",
+          "keywords": [
+            "giai ngan",
+            "nhan tien vay"
+          ]
+        },
+        {
+          "key": "credit_card_payment",
+          "names": {
+            "en": "Credit card payment",
+            "vi": "Thanh toán thẻ tín dụng"
+          },
+          "default": "on",
+          "keywords": [
+            "thanh toan the",
+            "tra the tin dung"
+          ]
+        },
+        {
+          "key": "lending_out",
+          "names": {
+            "en": "Lend to someone",
+            "vi": "Cho vay / cho mượn"
+          },
+          "default": "on",
+          "keywords": [
+            "cho vay",
+            "cho muon"
+          ]
+        },
+        {
+          "key": "lending_repaid",
+          "names": {
+            "en": "Loan to someone repaid",
+            "vi": "Thu nợ đã cho vay"
+          },
+          "default": "on",
+          "keywords": [
+            "tra no",
+            "thu no"
+          ]
+        },
+        {
+          "key": "borrowing_in",
+          "names": {
+            "en": "Borrow from someone",
+            "vi": "Vay / mượn từ người khác"
+          },
+          "default": "on",
+          "keywords": [
+            "vay",
+            "muon tien"
+          ]
+        },
+        {
+          "key": "borrowing_repaid",
+          "names": {
+            "en": "Repay someone",
+            "vi": "Trả tiền đã mượn"
+          },
+          "default": "on",
+          "keywords": [
+            "tra tien muon"
+          ]
+        },
+        {
+          "key": "fx_exchange",
+          "names": {
+            "en": "Currency exchange",
+            "vi": "Đổi ngoại tệ"
+          },
+          "default": "off",
+          "keywords": [
+            "doi tien",
+            "mua usd",
+            "ban usd"
+          ]
+        }
+      ]
+    }
+  ]
+}

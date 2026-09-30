@@ -14,7 +14,9 @@ A ledger-first personal-finance **backend** built to be the financial memory an 
 - `api/` — Python backend: FastAPI (REST, MCP server, Telegram channel), worker, migrations
 - `console/` — Next.js console, separate app with its own Dockerfile, built on the public API
 - `connectors/` — n8n templates and scripts that feed `POST /raw`
-- `i18n/` — shared message catalogues (`en` source, `vi` first-class) used by both `api/` and `console/`
+- `seeds/` — reference data as JSON (system tags, units) with schemas; loaded idempotently at startup
+- `i18n/` — shared message catalogues (`en` source, `vi` first-class) used by both `api/` and `console/`; `generated/` built from seeds
+- `scripts/` — repo tooling (`seeds_check`, `i18n_gen`, `i18n_check`); run via `make check`
 - `docs/` — [product](docs/product/00-vision.md) · [tech](docs/tech/00-architecture.md) · [ui](docs/ui/00-overview.md) · [index](docs/README.md)
 
 ## Stack

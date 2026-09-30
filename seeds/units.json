@@ -1,0 +1,34 @@
+{
+  "$schema": "./schemas/units.schema.json",
+  "version": 1,
+  "notes": "Global units. One table; measure is an enum. factor_to_base is null for money (conversion via fx_rates). Base unit per measure has factor 1. decimals drive parsing, rounding and display. names are extracted into i18n unit.* entries. Users may add their own units inside an existing measure; those carry a user-provided name instead.",
+  "measures": {
+    "money": { "base": null, "conversion": "fx_rates" },
+    "mass": { "base": "g", "conversion": "factor" },
+    "count": { "base": "unit", "conversion": "factor" },
+    "area": { "base": "m2", "conversion": "factor" }
+  },
+  "units": [
+    { "code": "VND", "measure": "money", "factor_to_base": null, "decimals": 0, "symbol": "₫", "names": { "en": "Vietnamese đồng", "vi": "Đồng" }, "aliases": ["vnd", "đ", "d", "dong", "k", "tr", "ty"] },
+    { "code": "USD", "measure": "money", "factor_to_base": null, "decimals": 2, "symbol": "$", "names": { "en": "US dollar", "vi": "Đô la Mỹ" }, "aliases": ["usd", "$", "do", "đô", "dollar"] },
+    { "code": "EUR", "measure": "money", "factor_to_base": null, "decimals": 2, "symbol": "€", "names": { "en": "Euro", "vi": "Euro" }, "aliases": ["eur", "€"] },
+    { "code": "BTC", "measure": "money", "factor_to_base": null, "decimals": 8, "symbol": "₿", "names": { "en": "Bitcoin", "vi": "Bitcoin" }, "aliases": ["btc", "bitcoin"] },
+    { "code": "ETH", "measure": "money", "factor_to_base": null, "decimals": 8, "symbol": "Ξ", "names": { "en": "Ether", "vi": "Ether" }, "aliases": ["eth", "ether", "ethereum"] },
+
+    { "code": "g", "measure": "mass", "factor_to_base": "1", "decimals": 3, "symbol": "g", "names": { "en": "gram", "vi": "gram" }, "aliases": ["g", "gram", "gam"] },
+    { "code": "kg", "measure": "mass", "factor_to_base": "1000", "decimals": 3, "symbol": "kg", "names": { "en": "kilogram", "vi": "kilôgam" }, "aliases": ["kg", "kilo", "ki"] },
+    { "code": "oz_troy", "measure": "mass", "factor_to_base": "31.1034768", "decimals": 4, "symbol": "oz t", "names": { "en": "troy ounce", "vi": "ounce" }, "aliases": ["oz", "ounce", "oz t", "troy"] },
+    { "code": "luong", "measure": "mass", "factor_to_base": "37.5", "decimals": 4, "symbol": "lượng", "names": { "en": "tael (lượng, 37.5 g)", "vi": "lượng" }, "aliases": ["luong", "lượng", "cay", "cây", "tael"], "region": "VN" },
+    { "code": "chi", "measure": "mass", "factor_to_base": "3.75", "decimals": 3, "symbol": "chỉ", "names": { "en": "chỉ (3.75 g)", "vi": "chỉ" }, "aliases": ["chi", "chỉ"], "region": "VN" },
+    { "code": "phan", "measure": "mass", "factor_to_base": "0.375", "decimals": 2, "symbol": "phân", "names": { "en": "phân (0.375 g)", "vi": "phân" }, "aliases": ["phan", "phân"], "region": "VN" },
+
+    { "code": "unit", "measure": "count", "factor_to_base": "1", "decimals": 0, "symbol": "", "names": { "en": "unit", "vi": "cái" }, "aliases": ["unit", "cai", "cái", "chiec", "chiếc", "con", "pc", "pcs"] },
+    { "code": "share", "measure": "count", "factor_to_base": "1", "decimals": 0, "symbol": "", "names": { "en": "share", "vi": "cổ phiếu" }, "aliases": ["share", "shares", "cp", "co phieu", "cổ phiếu", "ccq"] },
+
+    { "code": "m2", "measure": "area", "factor_to_base": "1", "decimals": 2, "symbol": "m²", "names": { "en": "square metre", "vi": "mét vuông" }, "aliases": ["m2", "m²", "met vuong", "mét vuông"] },
+    { "code": "ha", "measure": "area", "factor_to_base": "10000", "decimals": 4, "symbol": "ha", "names": { "en": "hectare", "vi": "héc-ta" }, "aliases": ["ha", "hecta", "héc-ta"] },
+    { "code": "sao_bac", "measure": "area", "factor_to_base": "360", "decimals": 3, "symbol": "sào", "names": { "en": "sào (North, 360 m²)", "vi": "sào Bắc Bộ" }, "aliases": ["sao bac", "sào bắc"], "region": "VN" },
+    { "code": "sao_trung", "measure": "area", "factor_to_base": "500", "decimals": 3, "symbol": "sào", "names": { "en": "sào (Central, 500 m²)", "vi": "sào Trung Bộ" }, "aliases": ["sao trung", "sào trung"], "region": "VN" },
+    { "code": "sao_nam", "measure": "area", "factor_to_base": "1000", "decimals": 3, "symbol": "sào", "names": { "en": "sào (South, 1000 m²)", "vi": "sào Nam Bộ" }, "aliases": ["sao nam", "sào nam", "cong", "công"], "region": "VN" }
+  ]
+}

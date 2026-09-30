@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finassis.dev/seeds/tags.schema.json",
+  "title": "Finassis system tag tree",
+  "type": "object",
+  "required": ["version", "roots"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "notes": { "type": "string" },
+    "roots": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/root" }
+    }
+  },
+  "$defs": {
+    "key": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,40}$" },
+    "names": {
+      "type": "object",
+      "required": ["en"],
+      "properties": { "en": { "type": "string" }, "vi": { "type": "string" } },
+      "additionalProperties": { "type": "string" }
+    },
+    "root": {
+      "type": "object",
+      "required": ["key", "kind", "names", "children"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "kind": { "enum": ["expense", "income", "transfer"] },
+        "names": { "$ref": "#/$defs/names" },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/child" } }
+      },
+      "additionalProperties": false
+    },
+    "child": {
+      "type": "object",
+      "required": ["key", "names", "default", "keywords"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "names": { "$ref": "#/$defs/names" },
+        "default": { "enum": ["on", "off", "sys"] },
+        "keywords": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "region": { "type": "string", "pattern": "^[A-Z]{2}$" },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

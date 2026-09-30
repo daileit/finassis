@@ -1,13 +1,14 @@
 # Finassis documentation
 
-Repo layout: `api/` (Python backend: REST, MCP, Telegram channel, worker), `console/` (Next.js UI), `connectors/` (n8n templates, scripts), `i18n/` (shared catalogues), `docs/` (this). `api` and `console` have their own Dockerfiles; `docker-compose.yml` at the root runs everything. See [tech/00-architecture.md](tech/00-architecture.md#repository-layout).
+Repo layout: `api/` (Python backend: REST, MCP, Telegram channel, worker), `console/` (Next.js UI), `connectors/` (n8n templates, scripts), `seeds/` (reference data as JSON: tags, units), `i18n/` (shared catalogues), `docs/` (this). `api` and `console` have their own Dockerfiles; `docker-compose.yml` at the root runs everything. See [tech/00-architecture.md](tech/00-architecture.md#repository-layout).
 
 ## Product — what and why
 
 - [00-vision.md](product/00-vision.md) — the financial memory an AI agent reads from; Vietnam first; principles, non-goals
 - [01-features.md](product/01-features.md) — expense, earning, wealth (units, per-unit aggregation), recipes, agent-ready data, Telegram, plans, multi-currency
 - [02-roadmap.md](product/02-roadmap.md) — phased delivery plan (ledger → recipes + Telegram → MCP → wealth depth → ops → console)
-- [03-tags.md](product/03-tags.md) — tag taxonomy, tagging cascade, confirmed memory, suggestions, translation
+- [03-tags.md](product/03-tags.md) — tag structure, tagging cascade, confirmed memory, suggestions, translation
+- [04-tag-taxonomy.md](product/04-tag-taxonomy.md) — rules for the system tag tree (data in [`seeds/tags.json`](../seeds/tags.json)); why assets aren't tagged
 
 ## Tech — how
 

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finassis.dev/seeds/units.schema.json",
+  "title": "Finassis global units",
+  "type": "object",
+  "required": ["version", "measures", "units"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "notes": { "type": "string" },
+    "measures": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["base", "conversion"],
+        "properties": {
+          "base": { "type": ["string", "null"] },
+          "conversion": { "enum": ["factor", "fx_rates"] }
+        }
+      }
+    },
+    "units": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "measure", "factor_to_base", "decimals", "names"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]{0,15}$" },
+          "measure": { "enum": ["money", "mass", "count", "area"] },
+          "factor_to_base": { "type": ["string", "null"], "description": "decimal as string to preserve precision; null only for money" },
+          "decimals": { "type": "integer", "minimum": 0, "maximum": 15 },
+          "symbol": { "type": "string" },
+          "names": {
+            "type": "object",
+            "required": ["en"],
+            "additionalProperties": { "type": "string" }
+          },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "region": { "type": "string", "pattern": "^[A-Z]{2}$" }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
