@@ -7,7 +7,7 @@ import pytest
 from finassis.domain import accounts, ledger, reports, users
 from finassis.money import UnitRegistry
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.asyncio(loop_scope="session")]
 
 
 async def _units(db) -> UnitRegistry:  # type: ignore[no-untyped-def]

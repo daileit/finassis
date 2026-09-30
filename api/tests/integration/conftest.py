@@ -14,7 +14,7 @@ from finassis.config import Settings, get_settings
 from finassis.db import Database
 from finassis.domain import seeds
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.asyncio(loop_scope="session")]
 
 BASE_URL = os.environ.get("FINASSIS_DATABASE_URL")
 
