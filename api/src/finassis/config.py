@@ -46,8 +46,8 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
 
     database_url: str = "postgresql://finassis:finassis@localhost:5432/finassis"
-    database_url_app: str | None = None  # role finassis_app; defaults to database_url
-    database_url_admin: str | None = None  # role finassis_admin; defaults to database_url
+    database_url_app: str | None = None  # optional separate login for request traffic; defaults to database_url
+    database_url_admin: str | None = None  # optional separate login for privileged work; defaults to database_url
     db_pool_min: int = 2
     db_pool_max: int = 10
 

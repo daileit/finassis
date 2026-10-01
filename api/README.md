@@ -9,7 +9,7 @@ cp .env.example .env           # set FINASSIS_TELEGRAM_BOT_TOKEN if you have a b
 docker compose up --build      # postgres, redis, api, worker
 ```
 
-First start prints the bootstrap admin key once:
+On the first start the Postgres container runs `api/db/init/*` once as superuser (extensions + the single app role, password from `.env`); the API itself never has superuser. Tenant isolation is per transaction (`app.user_id` for requests, `app.bypass_rls` for privileged paths), not per DB login. Then it prints the bootstrap admin key once:
 
 ```
 BOOTSTRAP: admin API key = fa_...

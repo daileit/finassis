@@ -1,6 +1,7 @@
 .PHONY: help i18n i18n-check seeds-check check docs-push db-up db-down db-check db-parse api-install api-test api-lint api-run up down logs
 
-PSQL_URL ?= postgresql://finassis:finassis@localhost:5432/finassis
+PSQL_URL ?= postgresql://postgres:postgres@localhost:5432/finassis            # superuser (compose default)
+APP_URL ?= postgresql://finassis_app:finassis_app@localhost:5432/finassis      # the one app role
 DB_SCRATCH ?= finassis_schema_check
 
 PY ?= python3
@@ -34,7 +35,7 @@ api-test:
 	cd api && .venv/bin/python -m pytest tests/unit -q
 
 api-itest:
-	cd api && FINASSIS_DATABASE_URL=$(PSQL_URL) .venv/bin/python -m pytest tests/integration -q -m integration
+	cd api && PG_SUPER_URL=$(PSQL_URL) FINASSIS_DATABASE_URL=$(APP_URL) .venv/bin/python -m pytest tests/integration -q -m integration
 
 api-lint:
 	cd api && .venv/bin/ruff check src tests && .venv/bin/mypy src || true
@@ -56,7 +57,7 @@ logs:
 
 db-up:
 	docker compose up -d postgres redis
-	@until docker compose exec -T postgres pg_isready -U finassis -d finassis >/dev/null 2>&1; do sleep 1; done; echo "postgres ready"
+	@until docker compose exec -T postgres pg_isready -U postgres -d finassis >/dev/null 2>&1; do sleep 1; done; echo "postgres ready"
 
 db-down:
 	docker compose down
@@ -65,8 +66,9 @@ db-parse:
 	$(PY) -c "import pglast,sys; s=open('api/db/schema.sql',encoding='utf-8').read(); print('schema.sql:', len(pglast.parse_sql(s)), 'statements parse OK')"
 
 db-check:
-	@psql "$(PSQL_URL)" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS $(DB_SCRATCH);" -c "CREATE DATABASE $(DB_SCRATCH);"
-	@psql "$(subst /finassis,/$(DB_SCRATCH),$(PSQL_URL))" -v ON_ERROR_STOP=1 -q -f api/db/schema.sql && echo "schema applied"
+	@psql "$(PSQL_URL)" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS $(DB_SCRATCH);" -c "CREATE DATABASE $(DB_SCRATCH) OWNER finassis_app;"
+	@psql "$(subst /finassis,/$(DB_SCRATCH),$(PSQL_URL))" -v ON_ERROR_STOP=1 -q -f api/db/init/00-extensions.sql
+	@psql "$(subst /finassis,/$(DB_SCRATCH),$(APP_URL))" -v ON_ERROR_STOP=1 -q -f api/db/schema.sql && echo "schema applied as the app role"
 	@psql "$(subst /finassis,/$(DB_SCRATCH),$(PSQL_URL))" -v ON_ERROR_STOP=1 -q -f api/db/smoke.sql
 	@psql "$(PSQL_URL)" -q -c "DROP DATABASE $(DB_SCRATCH);"
 

@@ -42,18 +42,20 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_USER: finassis
-          POSTGRES_PASSWORD: finassis
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: finassis
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U finassis -d finassis"
+          --health-cmd "pg_isready -U postgres -d finassis"
           --health-interval 5s --health-timeout 3s --health-retries 20
       redis:
         image: redis:7-alpine
         ports: ["6379:6379"]
     env:
-      FINASSIS_DATABASE_URL: postgresql://finassis:finassis@localhost:5432/finassis
+      PG_SUPER_URL: postgresql://postgres:postgres@localhost:5432/finassis
+      # the app never gets superuser: one role, RLS scoping per transaction
+      FINASSIS_DATABASE_URL: postgresql://finassis_app:finassis_app@localhost:5432/finassis
       FINASSIS_REDIS_URL: redis://localhost:6379/0
       FINASSIS_ENV: ci
     steps:
@@ -72,16 +74,21 @@ jobs:
         run: .venv/bin/ruff check src tests
       - name: Unit tests
         run: .venv/bin/python -m pytest tests/unit -q
-      - name: Schema + smoke.sql against real Postgres
+      - name: Provision extensions + app role (database side, as superuser)
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client >/dev/null
-          psql "$FINASSIS_DATABASE_URL" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE finassis_smoke;"
-          psql "postgresql://finassis:finassis@localhost:5432/finassis_smoke" -v ON_ERROR_STOP=1 -q -f db/schema.sql
-          psql "postgresql://finassis:finassis@localhost:5432/finassis_smoke" -v ON_ERROR_STOP=1 -q -f db/smoke.sql
+          psql "$PG_SUPER_URL" -v ON_ERROR_STOP=1 -q -f db/init/00-extensions.sql
+          POSTGRES_USER=postgres POSTGRES_DB=finassis PGPASSWORD=postgres PGHOST=localhost bash db/init/01-role.sh
+      - name: Schema (as the app role) + smoke.sql against real Postgres
+        run: |
+          psql "$PG_SUPER_URL" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE finassis_smoke OWNER finassis_app;"
+          psql "postgresql://postgres:postgres@localhost:5432/finassis_smoke" -v ON_ERROR_STOP=1 -q -f db/init/00-extensions.sql
+          psql "postgresql://finassis_app:finassis_app@localhost:5432/finassis_smoke" -v ON_ERROR_STOP=1 -q -f db/schema.sql
+          psql "postgresql://postgres:postgres@localhost:5432/finassis_smoke" -v ON_ERROR_STOP=1 -q -f db/smoke.sql
       - name: Migrate + seed + bootstrap (the real startup path)
         run: |
           .venv/bin/finassis migrate
-          psql "$FINASSIS_DATABASE_URL" -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'" | tee tables.txt
+          psql "$PG_SUPER_URL" -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'" | tee tables.txt
           test "$(cat tables.txt)" -gt 40 || (echo "migration did not create tables" && exit 1)
           .venv/bin/finassis seed
           .venv/bin/finassis partitions

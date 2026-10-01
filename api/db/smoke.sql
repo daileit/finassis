@@ -1,4 +1,5 @@
 -- Smoke test for schema.sql. Run as a superuser against a fresh database after schema.sql.
+-- Uses SET ROLE finassis_app (the single app role, created by api/db/init/01-role.sh) to exercise RLS.
 -- Verifies: seeds shape, RLS isolation, posting immutability, balance check, off_report root rule,
 -- money-unit trigger, partition routing. Exits non-zero on the first failure (psql -v ON_ERROR_STOP=1).
 

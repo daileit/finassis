@@ -1,12 +1,11 @@
-"""asyncpg pools and tenant-scoped transactions.
+"""asyncpg pool and tenant-scoped transactions.
 
-Two pools:
-  app   — role finassis_app in prod (RLS applies). Every use goes through tenant_tx(user_id),
-          which opens a transaction and SET LOCAL app.user_id so RLS policies resolve.
-  admin — role finassis_admin (BYPASSRLS). Privileged operations: user creation, bootstrap,
-          seed loading, jobs iterating tenants.
-In dev both DSNs may point at the same superuser; RLS still works because tenant_tx sets the GUC
-and the superuser policies are simply not enforced (tests for RLS use the app role explicitly).
+One database role, one pool. Isolation is per transaction:
+  tenant_tx(user_id) — SET LOCAL app.user_id: RLS policies see only that user's rows.
+  admin_tx()         — SET LOCAL app.bypass_rls = 'on': privileged code paths (user creation,
+                       bootstrap, seeds, jobs across tenants, tenant deletion).
+A second pool/DSN is optional (FINASSIS_DATABASE_URL_ADMIN) if you ever want a separate login
+for privileged work; by default both are the same role.
 """
 
 from __future__ import annotations
@@ -77,12 +76,16 @@ class Database:
 
     @contextlib.asynccontextmanager
     async def admin_tx(self) -> AsyncIterator[Conn]:
+        """Privileged transaction: RLS policies are bypassed via app.bypass_rls (transaction-local)."""
         async with self.admin.acquire() as conn, conn.transaction():
+            await conn.execute("SELECT set_config('app.bypass_rls', 'on', true)")
             yield conn
 
     @contextlib.asynccontextmanager
     async def admin_conn(self) -> AsyncIterator[Conn]:
-        async with self.admin.acquire() as conn:
+        """Privileged connection for single statements; wraps them in a bypass transaction."""
+        async with self.admin.acquire() as conn, conn.transaction():
+            await conn.execute("SELECT set_config('app.bypass_rls', 'on', true)")
             yield conn
 
 

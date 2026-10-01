@@ -3,37 +3,27 @@
 -- Hand-written init schema; the first Alembic migration is generated from this
 -- file. Afterwards Alembic is the source of truth and this file is re-rendered
 -- with `make db-render`. Design notes: docs/tech/08-database.md
--- Requires: pgvector >= 0.7, pg_trgm, unaccent, btree_gist, pgcrypto, pg_stat_statements
+-- Requires (pre-provisioned, see api/db/init/): pgvector >= 0.7, pg_trgm, unaccent, btree_gist, pgcrypto.
+-- Runs as the single application role (non-superuser), which owns every object.
+-- Tenant isolation: RLS policies read app.user_id; privileged code paths set app.bypass_rls = 'on'.
 -- =============================================================================
 
 BEGIN;
 
 -- -----------------------------------------------------------------------------
--- 0. Extensions
--- -----------------------------------------------------------------------------
-CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE EXTENSION IF NOT EXISTS unaccent;
-CREATE EXTENSION IF NOT EXISTS btree_gist;
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-
--- -----------------------------------------------------------------------------
--- 1. Roles (idempotent; passwords set out-of-band)
+-- 0. Preconditions (provisioned on the database side, never by the app)
+--    Extensions need superuser; they are created by api/db/init/00-extensions.sql
+--    (docker-entrypoint-initdb.d in compose) or by a DBA / the managed provider's console.
+--    This script runs as the application role, which must be allowed to CREATE in schema public.
 -- -----------------------------------------------------------------------------
 DO $$
+DECLARE missing text[];
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'finassis_owner') THEN
-    CREATE ROLE finassis_owner NOLOGIN;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'finassis_app') THEN
-    CREATE ROLE finassis_app LOGIN NOBYPASSRLS;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'finassis_admin') THEN
-    CREATE ROLE finassis_admin LOGIN BYPASSRLS;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'finassis_readonly') THEN
-    CREATE ROLE finassis_readonly LOGIN BYPASSRLS;
+  SELECT array_agg(e) INTO missing
+  FROM unnest(ARRAY['vector','pg_trgm','unaccent','btree_gist','pgcrypto']) AS e
+  WHERE NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = e);
+  IF missing IS NOT NULL THEN
+    RAISE EXCEPTION 'missing extensions %: create them as superuser first (see api/db/init/00-extensions.sql)', missing;
   END IF;
 END $$;
 
@@ -43,6 +33,14 @@ END $$;
 CREATE OR REPLACE FUNCTION current_user_id() RETURNS uuid
 LANGUAGE sql STABLE AS $$
   SELECT NULLIF(current_setting('app.user_id', true), '')::uuid
+$$;
+
+-- privileged code paths (user creation, seeds, jobs across tenants, tenant deletion) set this per transaction:
+--   SELECT set_config('app.bypass_rls', 'on', true);
+-- It is the single-role equivalent of a BYPASSRLS login. Only admin_tx() in the application sets it.
+CREATE OR REPLACE FUNCTION rls_bypass() RETURNS boolean
+LANGUAGE sql STABLE AS $$
+  SELECT current_setting('app.bypass_rls', true) = 'on'
 $$;
 
 CREATE OR REPLACE FUNCTION set_updated_at() RETURNS trigger
@@ -831,9 +829,7 @@ CREATE TABLE admin_audit (
 CREATE OR REPLACE FUNCTION postings_immutable() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
-  IF current_user IN ('finassis_admin', 'finassis_owner')
-     OR pg_has_role(current_user, 'finassis_owner', 'member')
-     OR (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) THEN
+  IF rls_bypass() OR (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) THEN
     IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
   END IF;
   IF TG_OP = 'UPDATE'
@@ -966,15 +962,15 @@ BEGIN
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
     EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
     EXECUTE format($p$CREATE POLICY tenant_isolation ON %I
-      USING (user_id = current_user_id()) WITH CHECK (user_id = current_user_id())$p$, t);
+      USING (rls_bypass() OR user_id = current_user_id()) WITH CHECK (rls_bypass() OR user_id = current_user_id())$p$, t);
   END LOOP;
 END $$;
 
--- users: a session sees only its own row. Creating a user (registration, bootstrap) is a privileged
--- operation performed on a finassis_admin connection, since no app.user_id exists yet.
+-- users: a session sees only its own row. Creating a user (registration, bootstrap) runs in admin_tx()
+-- with app.bypass_rls = 'on', since no app.user_id exists yet.
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users FORCE ROW LEVEL SECURITY;
-CREATE POLICY self ON users USING (id = current_user_id()) WITH CHECK (id = current_user_id());
+CREATE POLICY self ON users USING (rls_bypass() OR id = current_user_id()) WITH CHECK (rls_bypass() OR id = current_user_id());
 
 -- mixed global/per-user reference tables: read global + own, write own
 DO $$
@@ -984,30 +980,30 @@ BEGIN
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
     EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
     EXECUTE format($p$CREATE POLICY read_global_or_own ON %I FOR SELECT
-      USING (user_id IS NULL OR user_id = current_user_id())$p$, t);
+      USING (rls_bypass() OR user_id IS NULL OR user_id = current_user_id())$p$, t);
     EXECUTE format($p$CREATE POLICY write_own ON %I FOR ALL
-      USING (user_id = current_user_id()) WITH CHECK (user_id = current_user_id())$p$, t);
+      USING (rls_bypass() OR user_id = current_user_id()) WITH CHECK (rls_bypass() OR user_id = current_user_id())$p$, t);
   END LOOP;
 END $$;
 
 -- child tables without user_id: scope through parent
 ALTER TABLE recipe_versions ENABLE ROW LEVEL SECURITY; ALTER TABLE recipe_versions FORCE ROW LEVEL SECURITY;
 CREATE POLICY via_recipe ON recipe_versions
-  USING (EXISTS (SELECT 1 FROM recipes r WHERE r.id = recipe_id AND (r.user_id IS NULL OR r.user_id = current_user_id())))
-  WITH CHECK (EXISTS (SELECT 1 FROM recipes r WHERE r.id = recipe_id AND r.user_id = current_user_id()));
+  USING (rls_bypass() OR EXISTS (SELECT 1 FROM recipes r WHERE r.id = recipe_id AND (r.user_id IS NULL OR r.user_id = current_user_id())))
+  WITH CHECK (rls_bypass() OR EXISTS (SELECT 1 FROM recipes r WHERE r.id = recipe_id AND r.user_id = current_user_id()));
 ALTER TABLE recipe_fixtures ENABLE ROW LEVEL SECURITY; ALTER TABLE recipe_fixtures FORCE ROW LEVEL SECURITY;
 CREATE POLICY via_recipe ON recipe_fixtures
-  USING (EXISTS (SELECT 1 FROM recipes r WHERE r.id = recipe_id AND (r.user_id IS NULL OR r.user_id = current_user_id())))
-  WITH CHECK (EXISTS (SELECT 1 FROM recipes r WHERE r.id = recipe_id AND r.user_id = current_user_id()));
+  USING (rls_bypass() OR EXISTS (SELECT 1 FROM recipes r WHERE r.id = recipe_id AND (r.user_id IS NULL OR r.user_id = current_user_id())))
+  WITH CHECK (rls_bypass() OR EXISTS (SELECT 1 FROM recipes r WHERE r.id = recipe_id AND r.user_id = current_user_id()));
 ALTER TABLE webhook_deliveries ENABLE ROW LEVEL SECURITY; ALTER TABLE webhook_deliveries FORCE ROW LEVEL SECURITY;
 CREATE POLICY via_webhook ON webhook_deliveries
-  USING (EXISTS (SELECT 1 FROM webhooks w WHERE w.id = webhook_id AND w.user_id = current_user_id()));
+  USING (rls_bypass() OR EXISTS (SELECT 1 FROM webhooks w WHERE w.id = webhook_id AND w.user_id = current_user_id()));
 ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY; ALTER TABLE api_keys FORCE ROW LEVEL SECURITY;
-CREATE POLICY own_keys ON api_keys USING (user_id = current_user_id()) WITH CHECK (user_id = current_user_id());
+CREATE POLICY own_keys ON api_keys USING (rls_bypass() OR user_id = current_user_id()) WITH CHECK (rls_bypass() OR user_id = current_user_id());
 ALTER TABLE prices ENABLE ROW LEVEL SECURITY; ALTER TABLE prices FORCE ROW LEVEL SECURITY;
 CREATE POLICY via_instrument ON prices
-  USING (EXISTS (SELECT 1 FROM instruments i WHERE i.id = instrument_id AND (i.user_id IS NULL OR i.user_id = current_user_id())))
-  WITH CHECK (EXISTS (SELECT 1 FROM instruments i WHERE i.id = instrument_id AND i.user_id = current_user_id()));
+  USING (rls_bypass() OR EXISTS (SELECT 1 FROM instruments i WHERE i.id = instrument_id AND (i.user_id IS NULL OR i.user_id = current_user_id())))
+  WITH CHECK (rls_bypass() OR EXISTS (SELECT 1 FROM instruments i WHERE i.id = instrument_id AND i.user_id = current_user_id()));
 
 -- global-only tables: no RLS; app role read-only
 -- fx_rates, merchant_memory_global, plans, seed_versions, tag_keywords, admin_audit
@@ -1015,22 +1011,10 @@ CREATE POLICY via_instrument ON prices
 -- -----------------------------------------------------------------------------
 -- 18. Grants
 -- -----------------------------------------------------------------------------
-GRANT USAGE ON SCHEMA public TO finassis_app, finassis_admin, finassis_readonly;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO finassis_app, finassis_admin;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO finassis_readonly;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO finassis_app, finassis_admin;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO finassis_app, finassis_admin;
-REVOKE EXECUTE ON FUNCTION ensure_partitions(int) FROM finassis_app, PUBLIC;
--- app role may not touch global-only tables except read
-REVOKE INSERT, UPDATE, DELETE ON fx_rates, merchant_memory_global, plans, seed_versions, tag_keywords, admin_audit FROM finassis_app;
--- admin_audit is append-only even for admin
-REVOKE UPDATE, DELETE ON admin_audit FROM finassis_admin;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO finassis_app, finassis_admin;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO finassis_readonly;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO finassis_app, finassis_admin;
-
-ALTER ROLE finassis_readonly SET statement_timeout = '10s';
-ALTER ROLE finassis_app      SET statement_timeout = '30s';
-ALTER ROLE finassis_app      SET idle_in_transaction_session_timeout = '60s';
+-- One application role owns every object, so no GRANTs are needed. Keeping the app from writing
+-- global reference tables or the audit log is a code-path rule (seeds/admin run under admin_tx),
+-- not a privilege boundary: a second DB role would live in the same process with the same secrets
+-- and would not move the trust boundary. ensure_partitions() stays SECURITY DEFINER so a future
+-- reduced-privilege job runner could still call it.
 
 COMMIT;
