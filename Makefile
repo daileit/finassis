@@ -1,6 +1,6 @@
 .PHONY: help i18n i18n-check seeds-check check docs-push db-up db-down db-check db-parse api-install api-test api-lint api-run up down logs
 
-PSQL_URL ?= postgresql://postgres:postgres@localhost:5432/finassis            # superuser (compose default)
+PSQL_URL ?= postgresql://postgres:postgres@localhost:5432/postgres            # superuser (compose default)
 APP_URL ?= postgresql://finassis_app:finassis_app@localhost:5432/finassis      # the one app role
 DB_SCRATCH ?= finassis_schema_check
 
@@ -57,7 +57,7 @@ logs:
 
 db-up:
 	docker compose up -d postgres redis
-	@until docker compose exec -T postgres pg_isready -U postgres -d finassis >/dev/null 2>&1; do sleep 1; done; echo "postgres ready"
+	@until docker compose exec -T postgres pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done; echo "postgres ready"
 
 db-down:
 	docker compose down
@@ -67,9 +67,9 @@ db-parse:
 
 db-check:
 	@psql "$(PSQL_URL)" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS $(DB_SCRATCH);" -c "CREATE DATABASE $(DB_SCRATCH) OWNER finassis_app;"
-	@psql "$(subst /finassis,/$(DB_SCRATCH),$(PSQL_URL))" -v ON_ERROR_STOP=1 -q -f api/db/init/00-extensions.sql
+	@psql "$(subst /postgres,/$(DB_SCRATCH),$(PSQL_URL))" -v ON_ERROR_STOP=1 -q -f api/db/extensions.sql
 	@psql "$(subst /finassis,/$(DB_SCRATCH),$(APP_URL))" -v ON_ERROR_STOP=1 -q -f api/db/schema.sql && echo "schema applied as the app role"
-	@psql "$(subst /finassis,/$(DB_SCRATCH),$(PSQL_URL))" -v ON_ERROR_STOP=1 -q -f api/db/smoke.sql
+	@psql "$(subst /postgres,/$(DB_SCRATCH),$(PSQL_URL))" -v ON_ERROR_STOP=1 -q -f api/db/smoke.sql
 	@psql "$(PSQL_URL)" -q -c "DROP DATABASE $(DB_SCRATCH);"
 
 # docs/ is ignored on main; this syncs the working-tree docs into the docs branch

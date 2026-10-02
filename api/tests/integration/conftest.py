@@ -25,7 +25,7 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio(loop_scope="session")
 
 APP_URL = os.environ.get("FINASSIS_DATABASE_URL")
 SUPER_URL = os.environ.get("PG_SUPER_URL") or APP_URL
-INIT_DIR = Path(__file__).resolve().parents[2] / "db" / "init"
+DB_DIR = Path(__file__).resolve().parents[2] / "db"
 
 
 def _with_db(url: str, name: str) -> str:
@@ -50,7 +50,7 @@ async def database(scratch_name: str) -> AsyncIterator[Database]:
 
     # superuser: extensions in the scratch db (mirrors api/db/init on a fresh cluster)
     su_db = await asyncpg.connect(_with_db(SUPER_URL, scratch_name))
-    await su_db.execute((INIT_DIR / "00-extensions.sql").read_text(encoding="utf-8"))
+    await su_db.execute((DB_DIR / "extensions.sql").read_text(encoding="utf-8"))
     await su_db.close()
 
     # app role: the application schema (what Alembic 0001 does)

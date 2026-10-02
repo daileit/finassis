@@ -5,9 +5,10 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_USER: postgres            # cluster superuser: only the init scripts use it
+      POSTGRES_USER: postgres            # cluster superuser: only the init script uses it
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: finassis
+      # the init script creates the app database/role itself; POSTGRES_DB is just the maintenance db
+      FINASSIS_DB_NAME: ${FINASSIS_DB_NAME:-finassis}
       FINASSIS_DB_USER: ${FINASSIS_DB_USER:-finassis_app}
       FINASSIS_DB_PASSWORD: ${FINASSIS_DB_PASSWORD:-finassis_app}
     command:
@@ -24,10 +25,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # runs ONCE on an empty volume as superuser: extensions + the one app role. The app never needs superuser.
+      # runs ONCE on an empty volume as superuser: app role + app database + extensions inside it.
+      # On an existing volume run it by hand: docker compose exec postgres bash /docker-entrypoint-initdb.d/01-finassis.sh
       - ./api/db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d finassis"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -47,7 +49,7 @@ services:
     env_file: [.env]
     environment:
       # one non-superuser role; RLS scoping is per transaction (app.user_id / app.bypass_rls)
-      FINASSIS_DATABASE_URL: postgresql://${FINASSIS_DB_USER:-finassis_app}:${FINASSIS_DB_PASSWORD:-finassis_app}@postgres:5432/finassis
+      FINASSIS_DATABASE_URL: postgresql://${FINASSIS_DB_USER:-finassis_app}:${FINASSIS_DB_PASSWORD:-finassis_app}@postgres:5432/${FINASSIS_DB_NAME:-finassis}
       FINASSIS_REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
@@ -65,7 +67,7 @@ services:
     command: ["worker"]
     env_file: [.env]
     environment:
-      FINASSIS_DATABASE_URL: postgresql://${FINASSIS_DB_USER:-finassis_app}:${FINASSIS_DB_PASSWORD:-finassis_app}@postgres:5432/finassis
+      FINASSIS_DATABASE_URL: postgresql://${FINASSIS_DB_USER:-finassis_app}:${FINASSIS_DB_PASSWORD:-finassis_app}@postgres:5432/${FINASSIS_DB_NAME:-finassis}
       FINASSIS_REDIS_URL: redis://redis:6379/0
     depends_on:
       api:

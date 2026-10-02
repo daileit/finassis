@@ -12,8 +12,8 @@ BEGIN;
 
 -- -----------------------------------------------------------------------------
 -- 0. Preconditions (provisioned on the database side, never by the app)
---    Extensions need superuser; they are created by api/db/init/00-extensions.sql
---    (docker-entrypoint-initdb.d in compose) or by a DBA / the managed provider's console.
+--    Extensions need superuser; they are created inside the app database by api/db/init/01-finassis.sh
+--    (docker-entrypoint-initdb.d in compose), by a DBA (api/db/extensions.sql), or the managed provider's console.
 --    This script runs as the application role, which must be allowed to CREATE in schema public.
 -- -----------------------------------------------------------------------------
 DO $$
@@ -23,7 +23,7 @@ BEGIN
   FROM unnest(ARRAY['vector','pg_trgm','unaccent','btree_gist','pgcrypto']) AS e
   WHERE NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = e);
   IF missing IS NOT NULL THEN
-    RAISE EXCEPTION 'missing extensions %: create them as superuser first (see api/db/init/00-extensions.sql)', missing;
+    RAISE EXCEPTION 'missing extensions % in database %: run as superuser: psql -d % -f api/db/extensions.sql', missing, current_database(), current_database();
   END IF;
 END $$;
 

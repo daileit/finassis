@@ -44,16 +44,16 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: finassis
+          POSTGRES_DB: postgres
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U postgres -d finassis"
+          --health-cmd "pg_isready -U postgres"
           --health-interval 5s --health-timeout 3s --health-retries 20
       redis:
         image: redis:7-alpine
         ports: ["6379:6379"]
     env:
-      PG_SUPER_URL: postgresql://postgres:postgres@localhost:5432/finassis
+      PG_SUPER_URL: postgresql://postgres:postgres@localhost:5432/postgres
       # the app never gets superuser: one role, RLS scoping per transaction
       FINASSIS_DATABASE_URL: postgresql://finassis_app:finassis_app@localhost:5432/finassis
       FINASSIS_REDIS_URL: redis://localhost:6379/0
@@ -74,15 +74,15 @@ jobs:
         run: .venv/bin/ruff check src tests
       - name: Unit tests
         run: .venv/bin/python -m pytest tests/unit -q
-      - name: Provision extensions + app role (database side, as superuser)
+      - name: Provision app role + database + extensions (database side, as superuser; same script as compose)
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client >/dev/null
-          psql "$PG_SUPER_URL" -v ON_ERROR_STOP=1 -q -f db/init/00-extensions.sql
-          POSTGRES_USER=postgres POSTGRES_DB=finassis PGPASSWORD=postgres PGHOST=localhost bash db/init/01-role.sh
+          POSTGRES_USER=postgres POSTGRES_DB=postgres PGPASSWORD=postgres PGHOST=localhost \
+            FINASSIS_DB_NAME=finassis FINASSIS_DB_USER=finassis_app FINASSIS_DB_PASSWORD=finassis_app bash db/init/01-finassis.sh
       - name: Schema (as the app role) + smoke.sql against real Postgres
         run: |
           psql "$PG_SUPER_URL" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE finassis_smoke OWNER finassis_app;"
-          psql "postgresql://postgres:postgres@localhost:5432/finassis_smoke" -v ON_ERROR_STOP=1 -q -f db/init/00-extensions.sql
+          psql "postgresql://postgres:postgres@localhost:5432/finassis_smoke" -v ON_ERROR_STOP=1 -q -f db/extensions.sql
           psql "postgresql://finassis_app:finassis_app@localhost:5432/finassis_smoke" -v ON_ERROR_STOP=1 -q -f db/schema.sql
           psql "postgresql://postgres:postgres@localhost:5432/finassis_smoke" -v ON_ERROR_STOP=1 -q -f db/smoke.sql
       - name: Migrate + seed + bootstrap (the real startup path)
